@@ -2100,8 +2100,8 @@
                   </div>
                 </td>
                 <td style="text-align: center;">
-                  <input type="number" class="ma-input" id="maFrueh" value="0" min="0" readonly
-                         style="background: #e8f4f8; color: #4a90e2; font-weight: 600; cursor: not-allowed;">
+                  <input type="number" class="ma-input" id="maFrueh" value="0" min="0"
+                         style="background: #ffffff; color: #4a90e2; font-weight: 600; cursor: text; border: 2px solid #4a90e2; padding: 8px; border-radius: 8px;">
                 </td>
               </tr>
               <tr draggable="true">
@@ -2115,8 +2115,8 @@
                   </div>
                 </td>
                 <td style="text-align: center;">
-                  <input type="number" class="ma-input" id="maSpat" value="0" min="0" readonly
-                         style="background: #e8f4f8; color: #4a90e2; font-weight: 600; cursor: not-allowed;">
+                  <input type="number" class="ma-input" id="maSpat" value="0" min="0"
+                         style="background: #ffffff; color: #4a90e2; font-weight: 600; cursor: text; border: 2px solid #4a90e2; padding: 8px; border-radius: 8px;">
                 </td>
               </tr>
               <tr draggable="true">
@@ -2130,8 +2130,8 @@
                   </div>
                 </td>
                 <td style="text-align: center;">
-                  <input type="number" class="ma-input" id="maRotation" value="0" min="0" readonly
-                         style="background: #e8f4f8; color: #4a90e2; font-weight: 600; cursor: not-allowed;">
+                  <input type="number" class="ma-input" id="maRotation" value="0" min="0"
+                         style="background: #ffffff; color: #4a90e2; font-weight: 600; cursor: text; border: 2px solid #4a90e2; padding: 8px; border-radius: 8px;">
                 </td>
               </tr>
             </tbody>
@@ -3708,6 +3708,38 @@
   document.querySelectorAll('input[name="basis"]').forEach(r=>{
     r.addEventListener('change', rebuildPools);
   });
+
+  // Event Listeners für manuelle Mitarbeiter-Eingabe
+  const maFruehInput = document.getElementById('maFrueh');
+  const maSpatInput = document.getElementById('maSpat');
+  const maRotationInput = document.getElementById('maRotation');
+  
+  // Speichern bei Änderung (change) oder Enter-Taste
+  const handleMitarbeiterChange = () => {
+    saveDataForDate();
+    rebuildPools(); // Neuberechnung auslösen
+  };
+  
+  if (maFruehInput) {
+    maFruehInput.addEventListener('change', handleMitarbeiterChange);
+    maFruehInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleMitarbeiterChange();
+    });
+  }
+  
+  if (maSpatInput) {
+    maSpatInput.addEventListener('change', handleMitarbeiterChange);
+    maSpatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleMitarbeiterChange();
+    });
+  }
+  
+  if (maRotationInput) {
+    maRotationInput.addEventListener('change', handleMitarbeiterChange);
+    maRotationInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleMitarbeiterChange();
+    });
+  }
 
   // Initial render when page loads - IMMER aus PostgreSQL laden!
   if(document.readyState === 'loading') {
