@@ -4020,8 +4020,10 @@
   async function doImportMitarbeiterData() {
     const datum = getLocalDateString(new Date());
     
-    // Google Sheets URL aus seite3.html (localStorage)
-    const excelUrl = localStorage.getItem('excelUrl');
+    // Mitarbeiter-Google-Sheet URL (fest kodiert)
+    const MITARBEITER_SHEET_ID = '15yfflPhE6Lqykm8aqacnZcrJj0x0Y1Yd';
+    const excelUrl = `https://docs.google.com/spreadsheets/d/${MITARBEITER_SHEET_ID}/edit`;
+    
     if (!excelUrl) {
       console.log('ℹ️ Keine Mitarbeiter-Sheets URL konfiguriert');
       return false;
