@@ -3323,11 +3323,15 @@
   const el_pool = s => document.querySelector(s);
   
   function toHours(hm){
-    const [h,m]=hm.split(':').map(Number);
-    return h+m/60;
+    if (!hm || hm === '') return 0;
+    const parts = hm.split(':').map(Number);
+    const h = parts[0] || 0;
+    const m = parts[1] || 0;
+    return h + m/60;
   }
   
   function hoursBetween(s,e){
+    if (!s || !e) return 0.01;
     return Math.max(0.01,toHours(e)-toHours(s));
   }
   
@@ -3440,7 +3444,10 @@
 
     // Sortiere Pools nach Deadline (früh -> spät)
     const timeToMinutes = (time) => {
-      const [h, m] = time.split(':').map(Number);
+      if (!time || time === '') return 0;
+      const parts = time.split(':').map(Number);
+      const h = parts[0] || 0;
+      const m = parts[1] || 0;
       return h * 60 + m;
     };
     
