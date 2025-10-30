@@ -2100,8 +2100,8 @@
                   </div>
                 </td>
                 <td style="text-align: center;">
-                  <input type="number" class="ma-input" id="maFrueh" value="0" min="0"
-                         style="background: #ffffff; color: #4a90e2; font-weight: 600; cursor: text; border: 2px solid #4a90e2; padding: 8px; border-radius: 8px;">
+                  <input type="number" class="ma-input dev-editable" id="maFrueh" value="0" min="0" readonly
+                         style="background: #e8f4f8; color: #4a90e2; font-weight: 600; cursor: not-allowed;">
                 </td>
               </tr>
               <tr draggable="true">
@@ -2115,8 +2115,8 @@
                   </div>
                 </td>
                 <td style="text-align: center;">
-                  <input type="number" class="ma-input" id="maSpat" value="0" min="0"
-                         style="background: #ffffff; color: #4a90e2; font-weight: 600; cursor: text; border: 2px solid #4a90e2; padding: 8px; border-radius: 8px;">
+                  <input type="number" class="ma-input dev-editable" id="maSpat" value="0" min="0" readonly
+                         style="background: #e8f4f8; color: #4a90e2; font-weight: 600; cursor: not-allowed;">
                 </td>
               </tr>
               <tr draggable="true">
@@ -2130,8 +2130,8 @@
                   </div>
                 </td>
                 <td style="text-align: center;">
-                  <input type="number" class="ma-input" id="maRotation" value="0" min="0"
-                         style="background: #ffffff; color: #4a90e2; font-weight: 600; cursor: text; border: 2px solid #4a90e2; padding: 8px; border-radius: 8px;">
+                  <input type="number" class="ma-input dev-editable" id="maRotation" value="0" min="0" readonly
+                         style="background: #e8f4f8; color: #4a90e2; font-weight: 600; cursor: not-allowed;">
                 </td>
               </tr>
             </tbody>
@@ -2568,6 +2568,16 @@
       }
       if (navSeite3) navSeite3.style.display = 'inline-block';
       if (navTest) navTest.style.display = 'inline-block';
+      
+      // Mitarbeiter-Felder editierbar machen
+      document.querySelectorAll('.dev-editable').forEach(input => {
+        input.removeAttribute('readonly');
+        input.style.background = '#ffffff';
+        input.style.cursor = 'text';
+        input.style.border = '2px solid #4a90e2';
+        input.style.padding = '8px';
+        input.style.borderRadius = '8px';
+      });
     }
   }
 
@@ -3709,6 +3719,9 @@
     r.addEventListener('change', rebuildPools);
   });
 
+  // Flag für manuelle Eingabe
+  let manualInputActive = false;
+  
   // Event Listeners für manuelle Mitarbeiter-Eingabe
   const maFruehInput = document.getElementById('maFrueh');
   const maSpatInput = document.getElementById('maSpat');
@@ -3716,11 +3729,14 @@
   
   // Speichern bei Änderung (change) oder Enter-Taste
   const handleMitarbeiterChange = () => {
+    manualInputActive = true; // Setze Flag für manuelle Eingabe
     saveDataForDate();
     rebuildPools(); // Neuberechnung auslösen
+    console.log('✏️ Manuelle Eingabe erkannt - Auto-Import pausiert');
   };
   
   if (maFruehInput) {
+    maFruehInput.addEventListener('input', () => { manualInputActive = true; });
     maFruehInput.addEventListener('change', handleMitarbeiterChange);
     maFruehInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleMitarbeiterChange();
@@ -3728,6 +3744,7 @@
   }
   
   if (maSpatInput) {
+    maSpatInput.addEventListener('input', () => { manualInputActive = true; });
     maSpatInput.addEventListener('change', handleMitarbeiterChange);
     maSpatInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleMitarbeiterChange();
@@ -3735,6 +3752,7 @@
   }
   
   if (maRotationInput) {
+    maRotationInput.addEventListener('input', () => { manualInputActive = true; });
     maRotationInput.addEventListener('change', handleMitarbeiterChange);
     maRotationInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleMitarbeiterChange();
@@ -4051,6 +4069,12 @@
   
   // Mitarbeiter-Zahlen anzeigen aktualisieren
   function updateMitarbeiterDisplay() {
+    // NICHT überschreiben, wenn manuelle Eingabe aktiv ist!
+    if (manualInputActive) {
+      console.log('⏸️ Auto-Import übersprungen - Manuelle Eingabe aktiv');
+      return;
+    }
+    
     const maFruehEl = document.getElementById('maFrueh');
     const maSpatEl = document.getElementById('maSpat');
     const maRotEl = document.getElementById('maRotation');
