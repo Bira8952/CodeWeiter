@@ -2670,7 +2670,7 @@
   function berechnen() {
     const fruehName = document.getElementById('fruehName')?.textContent.trim() || 'FRÜH';
     const spatName = document.getElementById('spatName')?.textContent.trim() || 'SPÄT';
-    const rotationName = document.getElementById('rotationName')?.textContent.trim() || 'ROTATION';
+    const rotationName = document.getElementById('rotationName')?.textContent.trim() || 'Täti';
 
     document.querySelectorAll('.schicht-frueh').forEach(element => {
       element.textContent = fruehName;
@@ -3466,14 +3466,14 @@
       })
       .sort((a, b) => timeToMinutes(a.deadline) - timeToMinutes(b.deadline));
 
-    // Kapazitäten FÜR POOLS MIT ROTATION (bekommen auch Rotation-MA)
+    // Kapazitäten FÜR POOLS MIT Täti (bekommen auch Täti-MA)
     const capsWithRot={
       morning: frueh + rotActive.morning,
       midday:  frueh + spaet + rotActive.midday,
       late:    spaet + rotActive.late
     };
     
-    // Kapazitäten FÜR POOLS OHNE ROTATION (bekommen NUR Früh/Spät)
+    // Kapazitäten FÜR POOLS OHNE Täti (bekommen NUR Früh/Spät)
     const capsWithoutRot={
       morning: frueh,
       midday:  frueh + spaet,
@@ -3696,7 +3696,7 @@
     }
   }
 
-  // ROTATION per Klick hinzufügen/entfernen
+  // Täti per Klick hinzufügen/entfernen
   function toggleRotation(poolName) {
     const pool = pools.find(p => p.name === poolName);
     if (pool) {
@@ -4181,7 +4181,7 @@
         return false;
       }
       
-      // Zähle FRÜH, SPÄT, ROTATION
+      // Zähle FRÜH, SPÄT, Täti
       let countFrueh = 0;
       let countSpat = 0;
       let countRotation = 0;
@@ -4221,8 +4221,8 @@
                  schichtCode.startsWith('SPAT')) {
           countSpat++;
         }
-        // Zähle ROTATION (ROT, ROTATION)
-        else if (schichtCode === 'ROTATION' || schichtCode.startsWith('ROTATION') || 
+        // Zähle Täti (ROT, Täti)
+        else if (schichtCode === 'Täti' || schichtCode.startsWith('Täti') || 
                  schichtCode === 'ROT') {
           countRotation++;
         }
