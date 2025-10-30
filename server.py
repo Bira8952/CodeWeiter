@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, make_response
 from flask_cors import CORS
 import os
 import csv
@@ -135,7 +135,12 @@ def parse_pools_from_csv(csv_text):
 
 @app.route('/')
 def index():
-    return send_from_directory('.', 'index.html')
+    response = make_response(send_from_directory('.', 'index.html'))
+    # Disable caching for index.html to always get latest version
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/<path:path>')
 def serve_static(path):
