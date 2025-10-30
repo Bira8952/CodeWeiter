@@ -3753,6 +3753,9 @@
       
       // Mitarbeiter Auto-Refresh starten (alle 2 Sekunden)
       startMitarbeiterAutoRefresh();
+      
+      // Pool-Konfiguration Auto-Refresh starten (alle 5 Sekunden)
+      startPoolsConfigAutoRefresh();
     }).catch(err => {
       console.error('❌ Erster Import fehlgeschlagen:', err);
     });
@@ -4156,6 +4159,48 @@
   }
   
   // ========== END MITARBEITER AUTO-IMPORT SYSTEM ==========
+  
+  // ========== POOL-KONFIGURATION AUTO-REFRESH SYSTEM ==========
+  
+  let poolsConfigAutoRefreshInterval = null;
+  
+  // Auto-Refresh für Pool-Konfiguration starten (alle 5 Sekunden)
+  async function startPoolsConfigAutoRefresh() {
+    if (poolsConfigAutoRefreshInterval) {
+      clearInterval(poolsConfigAutoRefreshInterval);
+    }
+    
+    // Sofort laden
+    await loadAndUpdatePoolsConfig();
+    
+    // Dann alle 5 Sekunden
+    poolsConfigAutoRefreshInterval = setInterval(() => {
+      loadAndUpdatePoolsConfig();
+    }, 5000);
+    
+    console.log('🔄 Pool-Konfiguration Auto-Refresh gestartet (alle 5 Sek)');
+  }
+  
+  // Pool-Konfiguration vom Backend laden und UI aktualisieren
+  async function loadAndUpdatePoolsConfig() {
+    try {
+      const newPools = await loadPoolsFromJSON();
+      if (newPools && newPools.length > 0) {
+        // Prüfe ob sich etwas geändert hat
+        const hasChanges = JSON.stringify(pools) !== JSON.stringify(newPools);
+        
+        if (hasChanges) {
+          console.log('🔄 Pool-Konfiguration aktualisiert:', newPools.length, 'Pools');
+          pools = newPools;
+          rebuildPools(); // UI aktualisieren
+        }
+      }
+    } catch (error) {
+      console.error('❌ Fehler beim Laden der Pool-Konfiguration:', error);
+    }
+  }
+  
+  // ========== END POOL-KONFIGURATION AUTO-REFRESH SYSTEM ==========
   
 </script>
 
