@@ -3242,27 +3242,27 @@
     {name:"ZB Pakete heute",start:"06:00",deadline:"17:00",fixVol:1500,liveVol:0,factor:1.0,rate:80,useRotation:true}
   ];
   
-  // Lade Pools aus PostgreSQL Datenbank
+  // Lade Pools aus Backend (Standard-Pools aus server.py)
   async function loadPoolsFromJSON() {
     try {
       const response = await fetch('/api/pools');
       if (response.ok) {
         const jsonData = await response.json();
-        console.log('🗄️ Pools aus PostgreSQL geladen:', jsonData.length);
+        console.log('🗄️ Pools vom Backend geladen:', jsonData.length);
         return jsonData;
       }
     } catch (e) {
-      console.warn('⚠️ Fehler beim Laden aus PostgreSQL:', e);
+      console.warn('⚠️ Fehler beim Laden vom Backend:', e);
     }
     console.log('📦 Standard-Pools geladen (Fallback)');
     return JSON.parse(JSON.stringify(defaultPools)); // Deep copy
   }
 
-  // Lade Pools (PostgreSQL hat Priorität, localStorage als Fallback)
+  // Lade Pools (Backend hat Priorität, localStorage als Fallback)
   function loadPools() {
-    // loadPoolsFromJSON() lädt jetzt aus PostgreSQL
+    // loadPoolsFromJSON() lädt jetzt vom Backend
     // Dies wird nur als Fallback verwendet wenn async Laden fehlschlägt
-    console.log('📦 Nutze Standard-Pools (werden durch PostgreSQL überschrieben)');
+    console.log('📦 Nutze Standard-Pools (werden durch Backend überschrieben)');
     return JSON.parse(JSON.stringify(defaultPools)); // Deep copy
   }
   
