@@ -4018,14 +4018,11 @@
   
   // Mitarbeiter-Daten aus Google Sheets importieren (AUTOMATISCH!)
   async function doImportMitarbeiterData() {
-    console.log('🔥 NEUE VERSION 2.0 - doImportMitarbeiterData gestartet!');
     const datum = getLocalDateString(new Date());
     
     // Mitarbeiter-Google-Sheet URL (fest kodiert)
     const MITARBEITER_SHEET_ID = '15yfflPhE6Lqykm8aqacnZcrJj0x0Y1Yd';
     const excelUrl = `https://docs.google.com/spreadsheets/d/${MITARBEITER_SHEET_ID}/edit`;
-    
-    console.log('📋 Mitarbeiter-Sheet URL:', excelUrl, '| Datum:', datum);
     
     if (!excelUrl) {
       console.log('ℹ️ Keine Mitarbeiter-Sheets URL konfiguriert');
