@@ -11,7 +11,8 @@ CORS(app)
 
 # Google Sheets Config
 GOOGLE_SHEETS_ID = "1EhhG5Da2kDpLMktcrSdn1DTMnr_XLEdJyNUI2ZwLuQ4"
-POOLS_SHEET_GID = "0"  # Erster Tab für Pool-Konfiguration
+LIVEVOL_SHEET_GID = "0"  # Erster Tab für Live-Vol Daten
+POOLS_CONFIG_SHEET_GID = "1"  # Zweiter Tab für Pool-Konfiguration (NAME, START, DEADLINE, FAKTOR, RATE, SCHICHT)
 
 def fetch_google_sheet_csv(sheet_id, gid="0"):
     """Lädt Google Sheet als CSV"""
@@ -24,11 +25,9 @@ def fetch_google_sheet_csv(sheet_id, gid="0"):
         print(f"Fehler beim Laden von Google Sheets: {e}")
         return None
 
-def parse_pools_from_csv(csv_text):
-    """Parst Pool-Konfiguration aus CSV"""
-    
-    # Standard-Pools (diese können in Google Sheets angepasst werden)
-    default_pools = [
+def get_default_pools():
+    """Gibt Standard-Pools zurück (Fallback wenn Google Sheets nicht erreichbar)"""
+    return [
         {"name": "FR bis 08:45", "start": "06:00", "deadline": "08:45", "factor": 1, "rate": 80, "schicht": "FRÜH"},
         {"name": "DE bis 10:00", "start": "06:00", "deadline": "10:00", "factor": 1, "rate": 80, "schicht": "FRÜH"},
         {"name": "EMS bis 13:30 und 17:00", "start": "06:00", "deadline": "17:00", "factor": 1, "rate": 80, "schicht": "FRÜH"},
@@ -48,10 +47,85 @@ def parse_pools_from_csv(csv_text):
         {"name": "ZB Pakete Restbestand", "start": "06:00", "deadline": "17:00", "factor": 1, "rate": 80, "schicht": "ROTATION"},
         {"name": "ZB Pakete heute", "start": "06:00", "deadline": "17:00", "factor": 1, "rate": 80, "schicht": "ROTATION"},
     ]
+
+def parse_pools_from_csv(csv_text):
+    """
+    Parst Pool-Konfiguration aus CSV
     
-    # Gebe immer die Standard-Pools zurück
-    # TODO: In Zukunft können wir diese aus einem speziellen Google Sheets Tab lesen
-    return default_pools
+    Erwartetes Format (mit Header-Zeile):
+    NAME,START,DEADLINE,FAKTOR,RATE,SCHICHT
+    FR bis 08:45,06:00,08:45,1,80,FRÜH
+    DE bis 10:00,06:00,10:00,1,80,FRÜH
+    ...
+    """
+    pools = []
+    
+    if not csv_text:
+        print("⚠️ Kein CSV-Text vorhanden, verwende Standard-Pools")
+        return get_default_pools()
+    
+    try:
+        csv_file = StringIO(csv_text)
+        reader = csv.reader(csv_file)
+        rows = list(reader)
+        
+        if len(rows) < 2:
+            print("⚠️ Zu wenige Zeilen in CSV, verwende Standard-Pools")
+            return get_default_pools()
+        
+        # Erste Zeile ist Header
+        header = [col.strip().upper() for col in rows[0]]
+        
+        # Finde Spalten-Indizes
+        try:
+            name_idx = header.index('NAME')
+            start_idx = header.index('START')
+            deadline_idx = header.index('DEADLINE')
+            factor_idx = header.index('FAKTOR')
+            rate_idx = header.index('RATE')
+            schicht_idx = header.index('SCHICHT')
+        except ValueError as e:
+            print(f"⚠️ Fehlende Spalte in CSV: {e}, verwende Standard-Pools")
+            return get_default_pools()
+        
+        # Parse Pool-Daten
+        for i, row in enumerate(rows[1:], start=2):
+            if len(row) < max(name_idx, start_idx, deadline_idx, factor_idx, rate_idx, schicht_idx) + 1:
+                print(f"⚠️ Zeile {i} hat zu wenige Spalten, überspringe")
+                continue
+            
+            try:
+                pool = {
+                    "name": row[name_idx].strip(),
+                    "start": row[start_idx].strip(),
+                    "deadline": row[deadline_idx].strip(),
+                    "factor": float(row[factor_idx].strip()) if row[factor_idx].strip() else 1,
+                    "rate": int(row[rate_idx].strip()) if row[rate_idx].strip() else 80,
+                    "schicht": row[schicht_idx].strip().upper()
+                }
+                
+                # Validierung
+                if not pool["name"]:
+                    print(f"⚠️ Zeile {i}: Name ist leer, überspringe")
+                    continue
+                
+                pools.append(pool)
+                print(f"✓ Pool geladen: {pool['name']} (START: {pool['start']}, DEADLINE: {pool['deadline']}, SCHICHT: {pool['schicht']})")
+                
+            except (ValueError, IndexError) as e:
+                print(f"⚠️ Fehler beim Parsen von Zeile {i}: {e}, überspringe")
+                continue
+        
+        if pools:
+            print(f"✅ {len(pools)} Pools erfolgreich aus Google Sheets geladen")
+            return pools
+        else:
+            print("⚠️ Keine gültigen Pools gefunden, verwende Standard-Pools")
+            return get_default_pools()
+            
+    except Exception as e:
+        print(f"❌ Fehler beim Parsen des CSV: {e}, verwende Standard-Pools")
+        return get_default_pools()
 
 @app.route('/')
 def index():
@@ -63,18 +137,22 @@ def serve_static(path):
 
 @app.route('/api/pools', methods=['GET'])
 def get_pools():
-    """Lädt Pool-Konfiguration aus Google Sheets"""
+    """Lädt Pool-Konfiguration aus Google Sheets (Tab 2)"""
     try:
-        # Lade CSV von Google Sheets
-        csv_text = fetch_google_sheet_csv(GOOGLE_SHEETS_ID, POOLS_SHEET_GID)
+        print(f"📥 Lade Pool-Konfiguration aus Google Sheets (GID={POOLS_CONFIG_SHEET_GID})...")
+        
+        # Lade CSV von Google Sheets (Tab 2 für Pool-Konfiguration)
+        csv_text = fetch_google_sheet_csv(GOOGLE_SHEETS_ID, POOLS_CONFIG_SHEET_GID)
         
         # Parse Pools
         pools = parse_pools_from_csv(csv_text)
         
+        print(f"✅ {len(pools)} Pools bereitgestellt")
         return jsonify(pools)
     except Exception as e:
-        print(f"Fehler beim Laden der Pools: {e}")
-        return jsonify({'error': str(e)}), 500
+        print(f"❌ Fehler beim Laden der Pools: {e}")
+        # Fallback zu Standard-Pools
+        return jsonify(get_default_pools())
 
 # Pool-Daten werden jetzt aus Google Sheets gelesen
 # Änderungen werden direkt in Google Sheets vorgenommen
