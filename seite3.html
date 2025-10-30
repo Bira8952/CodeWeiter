@@ -620,7 +620,7 @@
               countFrueh++;
             } else if (schichtCode === 'SPÄT' || schichtCode === 'SPAT' || schichtCode.startsWith('SPÄT') || schichtCode.startsWith('SPAT')) {
               countSpat++;
-            } else if (schichtCode === 'Täti' || schichtCode.startsWith('Täti') || schichtCode === 'ROT') {
+            } else if (schichtCode === 'TÄTI' || schichtCode.startsWith('TÄTI') || schichtCode === 'ROT') {
               countTäti++;
             }
           }
@@ -771,7 +771,7 @@
 
         let countFrueh = 0;
         let countSpat = 0;
-        let countRotation = 0;
+        let countTäti = 0;
 
         for (let row = 5; row < lines.length; row++) {
           const zeile = lines[row];
@@ -791,15 +791,15 @@
             countFrueh++;
           } else if (schichtCode === 'SPÄT' || schichtCode === 'SPAT' || schichtCode.startsWith('SPÄT') || schichtCode.startsWith('SPAT')) {
             countSpat++;
-          } else if (schichtCode === 'Täti' || schichtCode.startsWith('Täti') || schichtCode === 'ROT') {
-            countRotation++;
+          } else if (schichtCode === 'TÄTI' || schichtCode.startsWith('TÄTI') || schichtCode === 'ROT') {
+            countTäti++;
           }
         }
 
         const data = {
           maFrueh: countFrueh,
           maSpat: countSpat,
-          maRotation: countRotation
+          maTäti: countTäti
         };
 
         localStorage.setItem(`einsatzplan_${dateStr}`, JSON.stringify(data));
