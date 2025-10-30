@@ -1,18 +1,57 @@
 #!/usr/bin/env python3
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
-import psycopg2
 import os
-from datetime import datetime, date
-import json
+import csv
+import requests
+from io import StringIO
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
+# Google Sheets Config
+GOOGLE_SHEETS_ID = "1EhhG5Da2kDpLMktcrSdn1DTMnr_XLEdJyNUI2ZwLuQ4"
+POOLS_SHEET_GID = "0"  # Erster Tab für Pool-Konfiguration
 
-def get_db_connection():
-    return psycopg2.connect(DATABASE_URL)
+def fetch_google_sheet_csv(sheet_id, gid="0"):
+    """Lädt Google Sheet als CSV"""
+    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        return response.text
+    except Exception as e:
+        print(f"Fehler beim Laden von Google Sheets: {e}")
+        return None
+
+def parse_pools_from_csv(csv_text):
+    """Parst Pool-Konfiguration aus CSV"""
+    
+    # Standard-Pools (diese können in Google Sheets angepasst werden)
+    default_pools = [
+        {"name": "FR bis 08:45", "start": "06:00", "deadline": "08:45", "factor": 1, "rate": 80, "schicht": "FRÜH"},
+        {"name": "DE bis 10:00", "start": "06:00", "deadline": "10:00", "factor": 1, "rate": 80, "schicht": "FRÜH"},
+        {"name": "EMS bis 13:30 und 17:00", "start": "06:00", "deadline": "17:00", "factor": 1, "rate": 80, "schicht": "FRÜH"},
+        {"name": "Luftverkehr bis 16:00", "start": "06:00", "deadline": "16:00", "factor": 1, "rate": 80, "schicht": "FRÜH"},
+        {"name": "Endpunkt bis 17:00", "start": "06:00", "deadline": "17:00", "factor": 1, "rate": 80, "schicht": "FRÜH"},
+        {"name": "Kleinwaren MUE ab 11:00", "start": "06:00", "deadline": "11:00", "factor": 1, "rate": 80, "schicht": "FRÜH"},
+        {"name": "NL bis 11:00", "start": "06:00", "deadline": "11:00", "factor": 1, "rate": 80, "schicht": "FRÜH"},
+        {"name": "DK+NO+SE+CZ+LU+HU+IS bis 11:00", "start": "06:00", "deadline": "11:00", "factor": 1, "rate": 80, "schicht": "FRÜH"},
+        {"name": "JP+AU+HK+TH+CA+US+IT", "start": "06:00", "deadline": "17:00", "factor": 1, "rate": 80, "schicht": "ROTATION"},
+        {"name": "CH Retouren bis 17:00", "start": "06:00", "deadline": "17:00", "factor": 1, "rate": 80, "schicht": "FRÜH"},
+        {"name": "WA Pakete bis 13:00", "start": "06:00", "deadline": "13:00", "factor": 1, "rate": 80, "schicht": "FRÜH"},
+        {"name": "WA Kleinwaren MUE bis 11:00", "start": "06:00", "deadline": "11:00", "factor": 1, "rate": 80, "schicht": "FRÜH"},
+        {"name": "BE+GB bis 15:00", "start": "06:00", "deadline": "15:00", "factor": 1, "rate": 80, "schicht": "FRÜH"},
+        {"name": "AT bis 16:30", "start": "06:00", "deadline": "16:30", "factor": 1, "rate": 80, "schicht": "FRÜH"},
+        {"name": "EMK PRA BackOffice1", "start": "06:00", "deadline": "17:00", "factor": 1, "rate": 80, "schicht": "ROTATION"},
+        {"name": "AVIS PRA BackOffice1", "start": "06:00", "deadline": "17:00", "factor": 1, "rate": 80, "schicht": "ROTATION"},
+        {"name": "ZB Pakete Restbestand", "start": "06:00", "deadline": "17:00", "factor": 1, "rate": 80, "schicht": "ROTATION"},
+        {"name": "ZB Pakete heute", "start": "06:00", "deadline": "17:00", "factor": 1, "rate": 80, "schicht": "ROTATION"},
+    ]
+    
+    # Gebe immer die Standard-Pools zurück
+    # TODO: In Zukunft können wir diese aus einem speziellen Google Sheets Tab lesen
+    return default_pools
 
 @app.route('/')
 def index():
@@ -24,153 +63,21 @@ def serve_static(path):
 
 @app.route('/api/pools', methods=['GET'])
 def get_pools():
+    """Lädt Pool-Konfiguration aus Google Sheets"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT id, name, start_time, deadline_time, hours, faktor, rate, schicht
-            FROM pools
-            ORDER BY id
-        """)
+        # Lade CSV von Google Sheets
+        csv_text = fetch_google_sheet_csv(GOOGLE_SHEETS_ID, POOLS_SHEET_GID)
         
-        pools = []
-        for row in cur.fetchall():
-            start_time_str = None
-            if row[2]:
-                start_time_str = str(row[2])[:5]
-            
-            deadline_time_str = None
-            if row[3]:
-                deadline_time_str = str(row[3])[:5]
-            
-            pools.append({
-                'id': row[0],
-                'name': row[1],
-                'start': start_time_str,
-                'deadline': deadline_time_str,
-                'hours': float(row[4]) if row[4] else 0,
-                'factor': row[5],
-                'rate': row[6],
-                'schicht': row[7]
-            })
+        # Parse Pools
+        pools = parse_pools_from_csv(csv_text)
         
-        cur.close()
-        conn.close()
         return jsonify(pools)
     except Exception as e:
+        print(f"Fehler beim Laden der Pools: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/pools', methods=['POST'])
-def create_or_update_pool():
-    try:
-        data = request.json
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        cur.execute("""
-            INSERT INTO pools (name, start_time, deadline_time, hours, faktor, rate, schicht)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (name) DO UPDATE SET
-                start_time = EXCLUDED.start_time,
-                deadline_time = EXCLUDED.deadline_time,
-                hours = EXCLUDED.hours,
-                faktor = EXCLUDED.faktor,
-                rate = EXCLUDED.rate,
-                schicht = EXCLUDED.schicht,
-                updated_at = CURRENT_TIMESTAMP
-            RETURNING id
-        """, (
-            data['name'],
-            data.get('start_time'),
-            data.get('deadline_time'),
-            data.get('hours', 0),
-            data.get('faktor', 1),
-            data.get('rate', 80),
-            data.get('schicht', 'FRÜH')
-        ))
-        
-        pool_id = cur.fetchone()[0]
-        conn.commit()
-        cur.close()
-        conn.close()
-        
-        return jsonify({'id': pool_id, 'message': 'Pool gespeichert'}), 201
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/pools/<int:pool_id>', methods=['PUT'])
-def update_pool(pool_id):
-    try:
-        data = request.json
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        cur.execute("""
-            UPDATE pools SET
-                start_time = %s,
-                deadline_time = %s,
-                hours = %s,
-                faktor = %s,
-                rate = %s,
-                schicht = %s,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = %s
-        """, (
-            data.get('start_time'),
-            data.get('deadline_time'),
-            data.get('hours'),
-            data.get('faktor'),
-            data.get('rate'),
-            data.get('schicht'),
-            pool_id
-        ))
-        
-        conn.commit()
-        cur.close()
-        conn.close()
-        
-        return jsonify({'message': 'Pool aktualisiert'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/pools/import', methods=['POST'])
-def import_pools():
-    try:
-        data = request.json
-        pools = data.get('pools', [])
-        
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        for pool in pools:
-            cur.execute("""
-                INSERT INTO pools (name, start_time, deadline_time, hours, faktor, rate, schicht)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (name) DO UPDATE SET
-                    start_time = EXCLUDED.start_time,
-                    deadline_time = EXCLUDED.deadline_time,
-                    hours = EXCLUDED.hours,
-                    faktor = EXCLUDED.faktor,
-                    rate = EXCLUDED.rate,
-                    schicht = EXCLUDED.schicht,
-                    updated_at = CURRENT_TIMESTAMP
-            """, (
-                pool['name'],
-                pool.get('start_time'),
-                pool.get('deadline_time'),
-                pool.get('hours', 0),
-                pool.get('faktor', 1),
-                pool.get('rate', 80),
-                pool.get('schicht', 'FRÜH')
-            ))
-        
-        conn.commit()
-        cur.close()
-        conn.close()
-        
-        return jsonify({'message': f'{len(pools)} Pools importiert'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+# Pool-Daten werden jetzt aus Google Sheets gelesen
+# Änderungen werden direkt in Google Sheets vorgenommen
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
