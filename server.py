@@ -4,6 +4,8 @@ from flask_cors import CORS
 import os
 import csv
 import requests
+import subprocess
+import json
 from io import StringIO
 
 app = Flask(__name__, static_folder='.')
@@ -154,8 +156,45 @@ def get_pools():
         # Fallback zu Standard-Pools
         return jsonify(get_default_pools())
 
-# Pool-Daten werden jetzt aus Google Sheets gelesen
-# Änderungen werden direkt in Google Sheets vorgenommen
+@app.route('/api/pools/save-to-sheets', methods=['POST'])
+def save_pools_to_sheets():
+    """Speichert Pool-Konfiguration ins Google Sheet (Web → Google Sheet)"""
+    try:
+        pools = request.get_json()
+        
+        if not pools or not isinstance(pools, list):
+            return jsonify({"error": "Ungültige Pool-Daten"}), 400
+        
+        print(f"📝 Speichere {len(pools)} Pools ins Google Sheet...")
+        
+        # Konvertiere Pools zu JSON String
+        pools_json = json.dumps(pools)
+        
+        # Rufe Node.js Script auf
+        result = subprocess.run(
+            ['node', 'writeToGoogleSheets.js', pools_json],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if result.returncode == 0:
+            print("✅ Pools erfolgreich ins Google Sheet geschrieben")
+            print(result.stdout)
+            return jsonify({"success": True, "message": "Pools ins Google Sheet gespeichert"})
+        else:
+            print(f"❌ Fehler beim Schreiben ins Google Sheet: {result.stderr}")
+            return jsonify({"error": result.stderr}), 500
+            
+    except subprocess.TimeoutExpired:
+        print("❌ Timeout beim Schreiben ins Google Sheet")
+        return jsonify({"error": "Timeout"}), 500
+    except Exception as e:
+        print(f"❌ Fehler beim Speichern ins Google Sheet: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# Pool-Daten werden aus Google Sheets gelesen
+# Änderungen aus dem Web werden ins Google Sheet geschrieben (Web → Google Sheet)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
