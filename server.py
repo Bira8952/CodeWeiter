@@ -55,9 +55,9 @@ def parse_pools_from_csv(csv_text):
     Parst Pool-Konfiguration aus CSV
     
     Erwartetes Format (mit Header-Zeile):
-    NAME,START,DEADLINE,FAKTOR,RATE,SCHICHT
-    FR bis 08:45,06:00,08:45,1,80,FRÜH
-    DE bis 10:00,06:00,10:00,1,80,FRÜH
+    NAME,START,DEADLINE,FAKTOR,RATE,ROTATION
+    FR bis 08:45,06:00,08:45,1,80,NEIN
+    DE bis 10:00,06:00,10:00,1,80,JA
     ...
     """
     pools = []
@@ -85,25 +85,28 @@ def parse_pools_from_csv(csv_text):
             deadline_idx = header.index('DEADLINE')
             factor_idx = header.index('FAKTOR')
             rate_idx = header.index('RATE')
-            schicht_idx = header.index('SCHICHT')
+            rotation_idx = header.index('ROTATION')
         except ValueError as e:
             print(f"⚠️ Fehlende Spalte in CSV: {e}, verwende Standard-Pools")
             return get_default_pools()
         
         # Parse Pool-Daten
         for i, row in enumerate(rows[1:], start=2):
-            if len(row) < max(name_idx, start_idx, deadline_idx, factor_idx, rate_idx, schicht_idx) + 1:
+            if len(row) < max(name_idx, start_idx, deadline_idx, factor_idx, rate_idx, rotation_idx) + 1:
                 print(f"⚠️ Zeile {i} hat zu wenige Spalten, überspringe")
                 continue
             
             try:
+                rotation_value = row[rotation_idx].strip().upper()
+                use_rotation = rotation_value == 'JA'
+                
                 pool = {
                     "name": row[name_idx].strip(),
                     "start": row[start_idx].strip(),
                     "deadline": row[deadline_idx].strip(),
                     "factor": float(row[factor_idx].strip()) if row[factor_idx].strip() else 1,
                     "rate": int(row[rate_idx].strip()) if row[rate_idx].strip() else 80,
-                    "schicht": row[schicht_idx].strip().upper()
+                    "useRotation": use_rotation
                 }
                 
                 # Validierung
@@ -112,7 +115,7 @@ def parse_pools_from_csv(csv_text):
                     continue
                 
                 pools.append(pool)
-                print(f"✓ Pool geladen: {pool['name']} (START: {pool['start']}, DEADLINE: {pool['deadline']}, SCHICHT: {pool['schicht']})")
+                print(f"✓ Pool geladen: {pool['name']} (START: {pool['start']}, DEADLINE: {pool['deadline']}, ROTATION: {rotation_value})")
                 
             except (ValueError, IndexError) as e:
                 print(f"⚠️ Fehler beim Parsen von Zeile {i}: {e}, überspringe")
