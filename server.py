@@ -14,7 +14,8 @@ CORS(app)
 # Google Sheets Config
 GOOGLE_SHEETS_ID = "14e85oqQrUjywXjNasJz7azME0t18RJEEldgRwCRFiH4"
 LIVEVOL_SHEET_GID = "0"  # Erster Tab für Live-Vol Daten
-POOLS_CONFIG_SHEET_GID = "0"  # Pool-Konfiguration Tab (NAME, START, DEADLINE, FAKTOR, RATE, SCHICHT)
+POOLS_CONFIG_SHEET_GID = "0"  # Pool-Konfiguration Tab (NAME, START, DEADLINE, FAKTOR, RATE, ROTATION)
+MITARBEITER_SHEET_ID = "15yfflPhE6Lqykm8aqacnZcrJj0x0Y1Yd"  # Mitarbeiter-Daten Google Sheet
 
 def fetch_google_sheet_csv(sheet_id, gid="0"):
     """Lädt Google Sheet als CSV"""
@@ -195,6 +196,102 @@ def save_pools_to_sheets():
     except Exception as e:
         print(f"❌ Fehler beim Speichern ins Google Sheet: {e}")
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/mitarbeiter/<date>', methods=['GET'])
+def get_mitarbeiter(date):
+    """Lädt Mitarbeiter-Daten für ein bestimmtes Datum aus Google Sheets"""
+    try:
+        print(f"📥 Lade Mitarbeiter-Daten für {date} aus Google Sheets...")
+        
+        # Lade CSV von Google Sheets (Mitarbeiter-Daten)
+        csv_text = fetch_google_sheet_csv(MITARBEITER_SHEET_ID, gid="0")
+        
+        if not csv_text:
+            print("⚠️ Mitarbeiter-Sheet nicht erreichbar")
+            return jsonify({"maFrueh": 0, "maSpat": 0, "maRotation": 0})
+        
+        # Parse CSV
+        csv_file = StringIO(csv_text)
+        reader = csv.reader(csv_file)
+        lines = list(reader)
+        
+        if len(lines) < 6:
+            print("⚠️ Mitarbeiter-Sheet hat zu wenige Zeilen")
+            return jsonify({"maFrueh": 0, "maSpat": 0, "maRotation": 0})
+        
+        # Finde die Spalte für das Datum (Zeile 4 enthält die Daten)
+        # Format: 2025-10-30 → suche nach "30.10." oder ähnlichem Format
+        date_parts = date.split('-')
+        if len(date_parts) == 3:
+            day = date_parts[2].lstrip('0')
+            month = date_parts[1].lstrip('0')
+            search_date = f"{day}.{month}."  # z.B. "30.10."
+        else:
+            print(f"⚠️ Ungültiges Datumsformat: {date}")
+            return jsonify({"maFrueh": 0, "maSpat": 0, "maRotation": 0})
+        
+        # Suche Spalte mit diesem Datum (in Zeile 4, Index 3)
+        date_row = lines[3] if len(lines) > 3 else []
+        col_index = -1
+        
+        for i, cell in enumerate(date_row):
+            if search_date in str(cell):
+                col_index = i
+                break
+        
+        if col_index == -1:
+            print(f"⚠️ Datum {search_date} nicht im Sheet gefunden")
+            return jsonify({"maFrueh": 0, "maSpat": 0, "maRotation": 0})
+        
+        # Zähle Schichten ab Zeile 5 (Index 4)
+        count_frueh = 0
+        count_spat = 0
+        count_rotation = 0
+        
+        for row_idx in range(4, len(lines)):
+            row = lines[row_idx]
+            
+            # Mitarbeiter-Name in Spalte 0
+            mitarbeiter = row[0].strip() if len(row) > 0 else ""
+            if not mitarbeiter:
+                continue
+            
+            # Schicht-Code in der gefundenen Spalte
+            if col_index >= len(row):
+                continue
+                
+            schicht_code = row[col_index].strip().upper()
+            
+            # Filtere leere und ungültige Codes
+            if not schicht_code or schicht_code == '-' or schicht_code == '':
+                continue
+            
+            # Entferne Zahlen am Anfang (z.B. "1 FRÜH" → "FRÜH")
+            schicht_code = ''.join([c for c in schicht_code if not c.isdigit()]).strip()
+            
+            # Überspringe Urlaub/Krank/etc.
+            if schicht_code in ['FT', 'A', 'U', 'K', 'URD', 'KA']:
+                continue
+            
+            # Zähle Schichten
+            if 'FRÜH' in schicht_code or 'FRUEH' in schicht_code:
+                count_frueh += 1
+            elif 'SPÄT' in schicht_code or 'SPAT' in schicht_code:
+                count_spat += 1
+            elif 'ROTATION' in schicht_code or schicht_code == 'ROT':
+                count_rotation += 1
+        
+        print(f"✅ Mitarbeiter für {date}: FRÜH={count_frueh}, SPÄT={count_spat}, ROTATION={count_rotation}")
+        
+        return jsonify({
+            "maFrueh": count_frueh,
+            "maSpat": count_spat,
+            "maRotation": count_rotation
+        })
+        
+    except Exception as e:
+        print(f"❌ Fehler beim Laden der Mitarbeiter-Daten: {e}")
+        return jsonify({"maFrueh": 0, "maSpat": 0, "maRotation": 0})
 
 # Pool-Daten werden aus Google Sheets gelesen
 # Änderungen aus dem Web werden ins Google Sheet geschrieben (Web → Google Sheet)
