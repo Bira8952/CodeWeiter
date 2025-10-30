@@ -3266,27 +3266,20 @@
     return JSON.parse(JSON.stringify(defaultPools)); // Deep copy
   }
   
-  // Speichere Pools in PostgreSQL Datenbank
+  // Speichere Pools ins Google Sheet (Web → Google Sheet)
   async function savePools() {
     try {
-      // 1. Speichere auch in localStorage (als Backup)
+      // 1. Speichere in localStorage (als Backup)
       const jsonString = JSON.stringify(pools, null, 2);
       localStorage.setItem('pools_data', jsonString);
       
-      // 2. Speichere in PostgreSQL Datenbank
-      const response = await fetch('/api/pools/save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonString
-      });
+      // 2. Speichere direkt ins Google Sheet (Web → Google Sheet)
+      const success = await savePoolsToGoogleSheets();
       
-      if (response.ok) {
-        const result = await response.json();
-        console.log('💾 PostgreSQL gespeichert:', result.count, 'Pools');
+      if (success) {
+        console.log('✅ Pools erfolgreich ins Google Sheet gespeichert');
       } else {
-        console.error('❌ Fehler beim Speichern in PostgreSQL:', response.statusText);
+        console.warn('⚠️ Fehler beim Speichern ins Google Sheet');
       }
     } catch (e) {
       console.warn('⚠️ Fehler beim Speichern:', e);
@@ -3754,8 +3747,8 @@
       // Mitarbeiter Auto-Refresh starten (alle 2 Sekunden)
       startMitarbeiterAutoRefresh();
       
-      // Pool-Konfiguration Auto-Refresh starten (alle 5 Sekunden)
-      startPoolsConfigAutoRefresh();
+      // Pool-Konfiguration: KEIN Auto-Refresh! Änderungen werden aus Web ins Google Sheet geschrieben
+      console.log('✅ Pool-Konfiguration: Web → Google Sheet Modus aktiviert');
     }).catch(err => {
       console.error('❌ Erster Import fehlgeschlagen:', err);
     });
@@ -4160,47 +4153,36 @@
   
   // ========== END MITARBEITER AUTO-IMPORT SYSTEM ==========
   
-  // ========== POOL-KONFIGURATION AUTO-REFRESH SYSTEM ==========
+  // ========== POOL-KONFIGURATION GOOGLE SHEETS SCHREIBEN ==========
   
-  let poolsConfigAutoRefreshInterval = null;
-  
-  // Auto-Refresh für Pool-Konfiguration starten (alle 5 Sekunden)
-  async function startPoolsConfigAutoRefresh() {
-    if (poolsConfigAutoRefreshInterval) {
-      clearInterval(poolsConfigAutoRefreshInterval);
-    }
-    
-    // Sofort laden
-    await loadAndUpdatePoolsConfig();
-    
-    // Dann alle 5 Sekunden
-    poolsConfigAutoRefreshInterval = setInterval(() => {
-      loadAndUpdatePoolsConfig();
-    }, 5000);
-    
-    console.log('🔄 Pool-Konfiguration Auto-Refresh gestartet (alle 5 Sek)');
-  }
-  
-  // Pool-Konfiguration vom Backend laden und UI aktualisieren
-  async function loadAndUpdatePoolsConfig() {
+  // Pool-Konfiguration ins Google Sheet schreiben
+  async function savePoolsToGoogleSheets() {
     try {
-      const newPools = await loadPoolsFromJSON();
-      if (newPools && newPools.length > 0) {
-        // Prüfe ob sich etwas geändert hat
-        const hasChanges = JSON.stringify(pools) !== JSON.stringify(newPools);
-        
-        if (hasChanges) {
-          console.log('🔄 Pool-Konfiguration aktualisiert:', newPools.length, 'Pools');
-          pools = newPools;
-          rebuildPools(); // UI aktualisieren
-        }
+      console.log('💾 Speichere Pool-Konfiguration ins Google Sheet...');
+      
+      // Sende Pools an Backend, das sie ins Google Sheet schreibt
+      const response = await fetch('/api/pools/save-to-sheets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(pools)
+      });
+      
+      if (response.ok) {
+        console.log('✅ Pool-Konfiguration ins Google Sheet gespeichert!');
+        return true;
+      } else {
+        console.error('❌ Fehler beim Speichern ins Google Sheet:', await response.text());
+        return false;
       }
     } catch (error) {
-      console.error('❌ Fehler beim Laden der Pool-Konfiguration:', error);
+      console.error('❌ Fehler beim Speichern ins Google Sheet:', error);
+      return false;
     }
   }
   
-  // ========== END POOL-KONFIGURATION AUTO-REFRESH SYSTEM ==========
+  // ========== END POOL-KONFIGURATION GOOGLE SHEETS SCHREIBEN ==========
   
 </script>
 
