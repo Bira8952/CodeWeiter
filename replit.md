@@ -5,11 +5,11 @@ Eine Webanwendung zur Verwaltung von Mitarbeiter-Einsatzplänen mit Google Sheet
 Entwickelt mit reinem HTML, CSS und JavaScript - keine Frameworks oder Backend-Programmiersprachen.
 
 ## Technologien
-- **HTML5** - Strukturierung der Seiten
-- **CSS3** - Styling und Design (inkl. Dunkelmodus)
-- **Vanilla JavaScript** - Alle Funktionalitäten
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript
+- **Backend**: Python (Flask) für API-Endpoints
+- **Google Sheets Integration**: Bidirektionale Synchronisation für Pool-Konfiguration und Live-Vol Daten
 - **SheetJS** - Excel/CSV Export-Funktionalität
-- **LocalStorage** - Clientseitige Datenspeicherung
+- **In-Memory Cache** - Backend-Cache für Mitarbeiter-Daten (5 Minuten TTL)
 
 ## Projektstruktur
 - `index.html` - Hauptseite für Einsatzplanung
@@ -19,16 +19,40 @@ Entwickelt mit reinem HTML, CSS und JavaScript - keine Frameworks oder Backend-P
 ## Features
 - ✅ Einsatzplanung mit Drag & Drop für Schichten
 - ✅ Verschiedene Schichttypen (Früh, Spät, Nacht, Rotation, etc.)
-- ✅ Google Sheets Integration für Mitarbeiterdaten
+- ✅ **LIVE-System**: Mitarbeiter-Daten synchronisieren live zwischen seite3.html und index.html
+- ✅ **Bidirektionale Google Sheets Integration**:
+  - Pool-Konfiguration: Web → Google Sheets (automatisches Schreiben)
+  - Live-Vol Daten: Google Sheets → Web (alle 1 Sekunde laden)
+  - Mitarbeiter-Daten: Google Sheets → Backend Cache → Web
 - ✅ CSV Import/Export Funktionalität
 - ✅ Dunkelmodus-Unterstützung
 - ✅ Responsive Design für verschiedene Bildschirmgrößen
-- ✅ LocalStorage für persistente Datenspeicherung
 - ✅ Developer-Modus für erweiterte Funktionen
+- ✅ Backend-Cache mit 5-Minuten TTL für performante Mitarbeiter-Daten
 
 ## Entwicklung
-Das Projekt läuft auf Port 5000 mit einem einfachen HTTP-Server.
-Keine Build-Schritte erforderlich - reine clientseitige Anwendung.
+Das Projekt läuft auf Port 5000 mit Flask Backend.
+- **Frontend**: Reine clientseitige Anwendung (HTML/CSS/JS)
+- **Backend**: Flask-Server mit API-Endpoints für Mitarbeiter-Daten
+- **Live-Synchronisation**: Mitarbeiter-Änderungen in seite3.html erscheinen sofort in index.html
+
+## API-Endpoints
+- `GET /api/pools` - Lädt Pool-Konfiguration aus Google Sheets
+- `GET /api/mitarbeiter/<datum>` - Lädt Mitarbeiter-Daten für bestimmtes Datum (aus Google Sheets oder Cache)
+- `POST /api/mitarbeiter/save` - Speichert Mitarbeiter-Daten im Backend-Cache
+
+## Google Sheets Integration
+- **Pool-Konfiguration Sheet** (ID: 14e85oqQrUjywXjNasJz7azME0t18RJEEldgRwCRFiH4)
+  - Struktur: NAME | START | DEADLINE | FAKTOR | RATE | ROTATION
+  - Synchronisation: Web → Google Sheets (automatisches Schreiben via writeToGoogleSheets.js)
+- **Live-Vol Sheet** (ID: 1EhhG5Da2kDpLMktcrSdn1DTMnr_XLEdJyNUI2ZwLuQ4)
+  - Synchronisation: Google Sheets → Web (alle 1 Sekunde laden)
+- **Mitarbeiter Sheet** (ID: 15yfflPhE6Lqykm8aqacnZcrJj0x0Y1Yd)
+  - Synchronisation: Google Sheets → Backend Cache → Web (alle 2 Sekunden)
 
 ## Letzte Änderungen
-- 2025-10-30: Projekt-Setup mit reinem HTML/CSS/JS
+- 2025-10-30: LIVE-System implementiert - Mitarbeiter-Daten synchronisieren live zwischen seite3.html und index.html
+- 2025-10-30: Backend-Endpoints erstellt für Mitarbeiter-Daten mit In-Memory Cache (5 Minuten TTL)
+- 2025-10-30: Bidirektionale Google Sheets Integration - Pool-Konfiguration schreibt automatisch zu Google Sheets
+- 2025-10-30: ROTATION-Spalte ersetzt SCHICHT-Spalte in Google Sheets (JA/NEIN statt Schicht-Typ)
+- 2025-10-30: Projekt-Setup mit HTML/CSS/JS Frontend und Flask Backend
