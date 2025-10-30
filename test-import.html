@@ -731,7 +731,7 @@
       const dayList = document.getElementById('dayList');
       dayList.innerHTML = dates.map(item => {
         const data = item.data;
-        const sum = (data.maFrueh || 0) + (data.maSpat || 0) + (data.maRotation || 0);
+        const sum = (data.maFrueh || 0) + (data.maSpat || 0) + (data.maTäti || 0);
         
         const hasData = sum > 0;
         const dateFormatted = item.date.toLocaleDateString('de-DE', { 
@@ -742,7 +742,7 @@
         });
         
         const counts = hasData ? 
-          `FRÜH: ${data.maFrueh || 0}, SPÄT: ${data.maSpat || 0}, Täti: ${data.maRotation || 0}` :
+          `FRÜH: ${data.maFrueh || 0}, SPÄT: ${data.maSpat || 0}, Täti: ${data.maTäti || 0}` :
           'Keine Daten';
 
         return `

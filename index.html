@@ -471,7 +471,7 @@
     cursor: pointer;
   }
 
-  .schicht-rotation {
+  .schicht-täti {
     background: #e67e22;
     color: white;
     padding: 6px 14px;
@@ -2124,13 +2124,13 @@
                   <div class="shift-label">
                     <div class="shift-label-top">
                       <span class="drag-handle">⋮⋮</span>
-                      <span id="rotationName" class="schicht-rotation editable" contenteditable="true">Täti</span>
+                      <span id="tätiName" class="schicht-täti editable" contenteditable="true">Täti</span>
                     </div>
                     <span class="shift-time">Flexibel</span>
                   </div>
                 </td>
                 <td style="text-align: center;">
-                  <input type="number" class="ma-input dev-editable" id="maRotation" value="0" min="0" readonly
+                  <input type="number" class="ma-input dev-editable" id="maTäti" value="0" min="0" readonly
                          style="background: #e8f4f8; color: #4a90e2; font-weight: 600; cursor: not-allowed;">
                 </td>
               </tr>
@@ -2355,7 +2355,7 @@
     const data = {
       maFrueh: parseInt(document.getElementById('maFrueh')?.value, 10) || 0,
       maSpat: parseInt(document.getElementById('maSpat')?.value, 10) || 0,
-      maRotation: parseInt(document.getElementById('maRotation')?.value, 10) || 0
+      maTäti: parseInt(document.getElementById('maTäti')?.value, 10) || 0
     };
     localStorage.setItem(`einsatzplan_${dateStr}`, JSON.stringify(data));
   }
@@ -2370,11 +2370,11 @@
         const data = await response.json();
         const fruehEl = document.getElementById('maFrueh');
         const spatEl = document.getElementById('maSpat');
-        const rotationEl = document.getElementById('maRotation');
+        const tätiEl = document.getElementById('maTäti');
         
         if (fruehEl) fruehEl.value = data.maFrueh || 0;
         if (spatEl) spatEl.value = data.maSpat || 0;
-        if (rotationEl) rotationEl.value = data.maRotation || 0;
+        if (tätiEl) tätiEl.value = data.maTäti || 0;
         
         // Trigger Import aus Google Sheets
         if (typeof doImportMitarbeiterData === 'function') {
@@ -2670,7 +2670,7 @@
   function berechnen() {
     const fruehName = document.getElementById('fruehName')?.textContent.trim() || 'FRÜH';
     const spatName = document.getElementById('spatName')?.textContent.trim() || 'SPÄT';
-    const rotationName = document.getElementById('rotationName')?.textContent.trim() || 'Täti';
+    const tätiName = document.getElementById('tätiName')?.textContent.trim() || 'Täti';
 
     document.querySelectorAll('.schicht-frueh').forEach(element => {
       element.textContent = fruehName;
@@ -2680,8 +2680,8 @@
       element.textContent = spatName;
     });
 
-    document.querySelectorAll('.schicht-rotation').forEach(element => {
-      element.textContent = rotationName;
+    document.querySelectorAll('.schicht-täti').forEach(element => {
+      element.textContent = tätiName;
     });
 
     updateDashboard();
@@ -2692,8 +2692,8 @@
   function updateDashboard() {
     let frueh = parseInt(document.getElementById('maFrueh')?.value, 10) || 0;
     let spat = parseInt(document.getElementById('maSpat')?.value, 10) || 0;
-    let rotation = parseInt(document.getElementById('maRotation')?.value, 10) || 0;
-    let gesamt = frueh + spat + rotation;
+    let täti = parseInt(document.getElementById('maTäti')?.value, 10) || 0;
+    let gesamt = frueh + spat + täti;
 
     let poolRows = document.querySelectorAll('#poolsTable tbody tr');
     let benoetigteMA = 0;
@@ -3044,7 +3044,7 @@
       setupDragItem(item);
     });
 
-    ['fruehName', 'spatName', 'rotationName'].forEach(id => {
+    ['fruehName', 'spatName', 'tätiName'].forEach(id => {
       const element = document.getElementById(id);
       if (element) {
         element.addEventListener('input', berechnen);
@@ -3052,7 +3052,7 @@
       }
     });
 
-    ['maFrueh', 'maSpat', 'maRotation'].forEach(id => {
+    ['maFrueh', 'maSpat', 'maTäti'].forEach(id => {
       const element = document.getElementById(id);
       if (element) {
         element.addEventListener('input', () => {
@@ -3232,24 +3232,24 @@
   // ========== POOL MANAGEMENT SYSTEM ==========
   // Default Pools
   const defaultPools = [
-    {name:"FR bis 08:45",start:"06:00",deadline:"08:45",fixVol:1600,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"DE bis 10:00",start:"06:00",deadline:"10:00",fixVol:3000,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"EMS bis 13:30 und 17:00",start:"06:00",deadline:"14:00",fixVol:500,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"Luftverkehr bis 16:00",start:"06:00",deadline:"16:00",fixVol:1500,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"Endpunkt bis 17:00",start:"06:00",deadline:"17:00",fixVol:1400,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"Kleinwaren MUE ab 11:00",start:"06:00",deadline:"11:00",fixVol:4000,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"NL bis 11:00",start:"06:00",deadline:"11:00",fixVol:800,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"DK+NO+SE+CZ+LU+HU+IS bis 11:00",start:"06:00",deadline:"11:00",fixVol:400,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"JP+AU+HK+TH+CA+US+IT",start:"06:00",deadline:"19:00",fixVol:2000,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"CH Retouren bis 17:00",start:"06:00",deadline:"17:00",fixVol:800,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"WA Pakete bis 13:00",start:"06:00",deadline:"13:00",fixVol:1000,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"WA Kleinwaren MUE bis 11:00",start:"06:00",deadline:"11:00",fixVol:1500,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"BE+GB bis 15:00",start:"06:00",deadline:"15:00",fixVol:1300,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"AT bis 16:30",start:"06:00",deadline:"16:30",fixVol:600,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"EMK PRA BackOffice1",start:"06:00",deadline:"17:00",fixVol:500,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"AVIS PRA BackOffice1",start:"06:00",deadline:"17:00",fixVol:500,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"ZB Pakete Restbestand",start:"06:00",deadline:"17:00",fixVol:1200,liveVol:0,factor:1.0,rate:80,useRotation:true},
-    {name:"ZB Pakete heute",start:"06:00",deadline:"17:00",fixVol:1500,liveVol:0,factor:1.0,rate:80,useRotation:true}
+    {name:"FR bis 08:45",start:"06:00",deadline:"08:45",fixVol:1600,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"DE bis 10:00",start:"06:00",deadline:"10:00",fixVol:3000,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"EMS bis 13:30 und 17:00",start:"06:00",deadline:"14:00",fixVol:500,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"Luftverkehr bis 16:00",start:"06:00",deadline:"16:00",fixVol:1500,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"Endpunkt bis 17:00",start:"06:00",deadline:"17:00",fixVol:1400,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"Kleinwaren MUE ab 11:00",start:"06:00",deadline:"11:00",fixVol:4000,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"NL bis 11:00",start:"06:00",deadline:"11:00",fixVol:800,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"DK+NO+SE+CZ+LU+HU+IS bis 11:00",start:"06:00",deadline:"11:00",fixVol:400,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"JP+AU+HK+TH+CA+US+IT",start:"06:00",deadline:"19:00",fixVol:2000,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"CH Retouren bis 17:00",start:"06:00",deadline:"17:00",fixVol:800,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"WA Pakete bis 13:00",start:"06:00",deadline:"13:00",fixVol:1000,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"WA Kleinwaren MUE bis 11:00",start:"06:00",deadline:"11:00",fixVol:1500,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"BE+GB bis 15:00",start:"06:00",deadline:"15:00",fixVol:1300,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"AT bis 16:30",start:"06:00",deadline:"16:30",fixVol:600,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"EMK PRA BackOffice1",start:"06:00",deadline:"17:00",fixVol:500,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"AVIS PRA BackOffice1",start:"06:00",deadline:"17:00",fixVol:500,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"ZB Pakete Restbestand",start:"06:00",deadline:"17:00",fixVol:1200,liveVol:0,factor:1.0,rate:80,useTäti:true},
+    {name:"ZB Pakete heute",start:"06:00",deadline:"17:00",fixVol:1500,liveVol:0,factor:1.0,rate:80,useTäti:true}
   ];
   
   // Lade Pools aus Backend (Standard-Pools aus server.py)
@@ -3403,11 +3403,11 @@
       // Live: Nutze die Dashboard-Werte
       const maFruehEl = document.getElementById('maFrueh');
       const maSpatEl = document.getElementById('maSpat');
-      const maRotationEl = document.getElementById('maRotation');
+      const maTätiEl = document.getElementById('maTäti');
       
       frueh = maFruehEl ? +maFruehEl.value : 0;
       spaet = maSpatEl ? +maSpatEl.value : 0;
-      rot = maRotationEl ? +maRotationEl.value : 0;
+      rot = maTätiEl ? +maTätiEl.value : 0;
     } else {
       // Fix: Nutze die Pool-Steuerungs-Felder
       const fruehInput = el_pool('#frueh');
@@ -3493,7 +3493,7 @@
     };
     
     data.forEach((p,i)=>{ 
-      if(p.useRotation){
+      if(p.useTäti){
         needsByBlock[p.blk].withRot.push(p.baseNeed);
         idxByBlock[p.blk].withRot.push(i);
       } else {
@@ -3521,7 +3521,7 @@
       data.forEach((p,pi)=>{
         // Hole die richtige Zuteilung (MIT oder OHNE Täti)
         let assigned = 0;
-        if(p.useRotation){
+        if(p.useTäti){
           const pos=idxByBlock[p.blk].withRot.indexOf(pi);
           assigned=pos>=0?(p.blk==='morning'?assignWithRot.morning[pos]:p.blk==='midday'?assignWithRot.midday[pos]:assignWithRot.late[pos]):0;
         } else {
@@ -3575,9 +3575,9 @@
               ${p.blk === 'morning' ? '<span style="background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%); color: white; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; box-shadow: 0 2px 4px rgba(74,144,226,0.3); display: inline-flex; align-items: center; gap: 4px;">FRÜH</span>' : 
                 p.blk === 'midday' ? '<span style="background: linear-gradient(90deg, #4a90e2 50%, #17a2b8 50%); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; box-shadow: 0 2px 4px rgba(74,144,226,0.3); display: inline-flex; align-items: center; gap: 4px;">FRÜH+SPÄT</span>' :
                 '<span style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; box-shadow: 0 2px 4px rgba(23,162,184,0.3); display: inline-flex; align-items: center; gap: 4px;">SPÄT</span>'}
-              ${!p.useRotation ? 
-                '<button onclick="toggleRotation(\'' + p.name.replace(/'/g, "\\'") + '\')" style="background: #29c46d; color: white; border: none; width: 16px; height: 16px; border-radius: 50%; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; line-height: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: all 0.2s ease; margin-left: -6px; opacity: 0.85;" onmouseover="this.style.opacity=\'1\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.15)\';" onmouseout="this.style.opacity=\'0.85\'; this.style.boxShadow=\'0 1px 2px rgba(0,0,0,0.1)\';">+</button>' : 
-                '<span onclick="toggleRotation(\'' + p.name.replace(/'/g, "\\'") + '\')" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; box-shadow: 0 2px 4px rgba(255,152,0,0.4); margin-left: -4px; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.transform=\'scale(1.05)\'; this.style.boxShadow=\'0 3px 8px rgba(255,152,0,0.6)\';" onmouseout="this.style.transform=\'scale(1)\'; this.style.boxShadow=\'0 2px 4px rgba(255,152,0,0.4)\';">ROT</span>'}
+              ${!p.useTäti ? 
+                '<button onclick="toggleTäti(\'' + p.name.replace(/'/g, "\\'") + '\')" style="background: #29c46d; color: white; border: none; width: 16px; height: 16px; border-radius: 50%; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; line-height: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: all 0.2s ease; margin-left: -6px; opacity: 0.85;" onmouseover="this.style.opacity=\'1\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.15)\';" onmouseout="this.style.opacity=\'0.85\'; this.style.boxShadow=\'0 1px 2px rgba(0,0,0,0.1)\';">+</button>' : 
+                '<span onclick="toggleTäti(\'' + p.name.replace(/'/g, "\\'") + '\')" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; box-shadow: 0 2px 4px rgba(255,152,0,0.4); margin-left: -4px; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.transform=\'scale(1.05)\'; this.style.boxShadow=\'0 3px 8px rgba(255,152,0,0.6)\';" onmouseout="this.style.transform=\'scale(1)\'; this.style.boxShadow=\'0 2px 4px rgba(255,152,0,0.4)\';">Täti</span>'}
             </div>
           </td>
           <td class="col-fix" data-view="fix" style="text-align: right; font-weight: 600;">${p.fixNeed}</td>
@@ -3641,7 +3641,7 @@
         const p=pools.find(x=>x.name===pool_name);
         
         if(p){ 
-          if(key === 'useRotation') {
+          if(key === 'useTäti') {
             // Checkbox: nutze .checked
             p[key] = e.target.checked;
           } else if(key === 'name' || key === 'start' || key === 'deadline') {
@@ -3697,10 +3697,10 @@
   }
 
   // Täti per Klick hinzufügen/entfernen
-  function toggleRotation(poolName) {
+  function toggleTäti(poolName) {
     const pool = pools.find(p => p.name === poolName);
     if (pool) {
-      pool.useRotation = !pool.useRotation;
+      pool.useTäti = !pool.useTäti;
       savePools(); // Speichere in localStorage + Server
       rebuildPools(); // Neu rendern
     }
@@ -4049,7 +4049,7 @@
   
   // ========== MITARBEITER AUTO-IMPORT SYSTEM ==========
   
-  let mitarbeiterData = { maFrueh: 0, maSpat: 0, maRotation: 0 };
+  let mitarbeiterData = { maFrueh: 0, maSpat: 0, maTäti: 0 };
   let mitarbeiterAutoRefreshInterval = null;
   
   // Mitarbeiter-Daten aus PostgreSQL laden
@@ -4077,11 +4077,11 @@
     
     const maFruehEl = document.getElementById('maFrueh');
     const maSpatEl = document.getElementById('maSpat');
-    const maRotEl = document.getElementById('maRotation');
+    const maTätiEl = document.getElementById('maTäti');
     
     if (maFruehEl) maFruehEl.value = mitarbeiterData.maFrueh || 0;
     if (maSpatEl) maSpatEl.value = mitarbeiterData.maSpat || 0;
-    if (maRotEl) maRotEl.value = mitarbeiterData.maRotation || 0;
+    if (maTätiEl) maTätiEl.value = mitarbeiterData.maTäti || 0;
     
     // Trigger Neuberechnung
     if (typeof berechnen === 'function') {
@@ -4090,14 +4090,14 @@
   }
   
   // Mitarbeiter-Daten in PostgreSQL speichern
-  async function saveMitarbeiterToDB(datum, maFrueh, maSpat, maRotation) {
+  async function saveMitarbeiterToDB(datum, maFrueh, maSpat, maTäti) {
     try {
       await fetch('/api/mitarbeiter/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ datum, maFrueh, maSpat, maRotation })
+        body: JSON.stringify({ datum, maFrueh, maSpat, maTäti })
       });
-      console.log('💾 MA gespeichert:', datum, 'FRÜH:', maFrueh, 'SPÄT:', maSpat, 'Täti:', maRotation);
+      console.log('💾 MA gespeichert:', datum, 'FRÜH:', maFrueh, 'SPÄT:', maSpat, 'Täti:', maTäti);
     } catch (error) {
       console.error('Fehler beim Speichern Mitarbeiter:', error);
     }
@@ -4184,7 +4184,7 @@
       // Zähle FRÜH, SPÄT, Täti
       let countFrueh = 0;
       let countSpat = 0;
-      let countRotation = 0;
+      let countTäti = 0;
       
       // Hilfsfunktion zum Normalisieren von Schicht-Codes
       function normalizeShiftCode(code) {
@@ -4224,16 +4224,16 @@
         // Zähle Täti (ROT, Täti)
         else if (schichtCode === 'Täti' || schichtCode.startsWith('Täti') || 
                  schichtCode === 'ROT') {
-          countRotation++;
+          countTäti++;
         }
       }
       
       // Speichere in PostgreSQL UND aktualisiere Anzeige
-      mitarbeiterData = { maFrueh: countFrueh, maSpat: countSpat, maRotation: countRotation };
-      await saveMitarbeiterToDB(datum, countFrueh, countSpat, countRotation);
+      mitarbeiterData = { maFrueh: countFrueh, maSpat: countSpat, maTäti: countTäti };
+      await saveMitarbeiterToDB(datum, countFrueh, countSpat, countTäti);
       updateMitarbeiterDisplay();
       
-      console.log('✅ MA-Import:', datum, '| FRÜH:', countFrueh, 'SPÄT:', countSpat, 'Täti:', countRotation);
+      console.log('✅ MA-Import:', datum, '| FRÜH:', countFrueh, 'SPÄT:', countSpat, 'Täti:', countTäti);
       return true;
       
     } catch (error) {
