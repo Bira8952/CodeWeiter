@@ -2188,7 +2188,7 @@
           <input id="spaet" type="number" value="7" style="width: 100%; padding: 4px; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px;">
         </div>
         <div>
-          <label style="display: block; font-size: 10px; color: #666; margin-bottom: 2px;">Rotation/Täti (MA)</label>
+          <label style="display: block; font-size: 10px; color: #666; margin-bottom: 2px;">Täti (MA)</label>
           <input id="rot" type="number" min="0" max="40" value="4" style="width: 100%; padding: 4px; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px;">
         </div>
       </div>
@@ -2206,7 +2206,7 @@
           </div>
         </div>
         <div>
-          <label style="display: block; font-size: 10px; color: #666; margin-bottom: 3px;">Rotation aktiv:</label>
+          <label style="display: block; font-size: 10px; color: #666; margin-bottom: 3px;">Täti aktiv:</label>
           <div style="display: flex; gap: 6px;">
             <label style="font-size: 10px; cursor: pointer;">
               <input type="checkbox" id="rotMorning" checked style="margin-right: 2px;"> Morning
@@ -2280,7 +2280,7 @@
           <div id="poolPlanFixSpSum" style="font-weight: 700; font-size: 18px; color: #17a2b8;">0</div>
         </div>
         <div style="text-align: center;">
-          <div style="font-size: 10px; color: #e67e22; margin-bottom: 4px; font-weight: 500;">Σ Rotation</div>
+          <div style="font-size: 10px; color: #e67e22; margin-bottom: 4px; font-weight: 500;">Σ Täti</div>
           <div id="poolPlanFixRotSum" style="font-weight: 700; font-size: 18px; color: #e67e22;">0</div>
         </div>
       </div>
@@ -2306,7 +2306,7 @@
           <div id="poolPlanLiveSpSum" style="font-weight: 700; font-size: 18px; color: #17a2b8;">0</div>
         </div>
         <div style="text-align: center;">
-          <div style="font-size: 10px; color: #e67e22; margin-bottom: 4px; font-weight: 500;">Σ Rotation</div>
+          <div style="font-size: 10px; color: #e67e22; margin-bottom: 4px; font-weight: 500;">Σ Täti</div>
           <div id="poolPlanLiveRotSum" style="font-weight: 700; font-size: 18px; color: #e67e22;">0</div>
         </div>
       </div>
@@ -3419,11 +3419,11 @@
       rot = rotInput ? +rotInput.value : 0;
     }
     
-    // Rotation Aktivierung
+    // Täti Aktivierung
     let rotActive;
     
     if (currentPoolView === 'live') {
-      // Live: Rotation ist flexibel - für Morning und Midday verfügbar
+      // Live: Täti ist flexibel - für Morning und Midday verfügbar
       rotActive = {
         morning: rot,
         midday: rot,
@@ -3480,7 +3480,7 @@
       late:    spaet
     };
 
-    // Teile Pools in zwei Gruppen: MIT und OHNE Rotation
+    // Teile Pools in zwei Gruppen: MIT und OHNE Täti
     const needsByBlock={
       morning:{withRot:[],withoutRot:[]},
       midday:{withRot:[],withoutRot:[]},
@@ -3502,7 +3502,7 @@
       }
     });
     
-    // Separate Zuteilungen für MIT und OHNE Rotation
+    // Separate Zuteilungen für MIT und OHNE Täti
     const assignWithRot={morning:[],midday:[],late:[]};
     const assignWithoutRot={morning:[],midday:[],late:[]};
     
@@ -3519,7 +3519,7 @@
       tb.innerHTML='';
       
       data.forEach((p,pi)=>{
-        // Hole die richtige Zuteilung (MIT oder OHNE Rotation)
+        // Hole die richtige Zuteilung (MIT oder OHNE Täti)
         let assigned = 0;
         if(p.useRotation){
           const pos=idxByBlock[p.blk].withRot.indexOf(pi);
@@ -3683,14 +3683,14 @@
       setTxt('poolPlanFixSum', totalNeedFix);
       setTxt('poolPlanFixFrSum', frueh);  // Frühdienst MA (06:00-15:30)
       setTxt('poolPlanFixSpSum', spaet);  // Spätdienst MA (15:30-19:00)
-      setTxt('poolPlanFixRotSum', rot);   // Rotation MA (Flexibel)
+      setTxt('poolPlanFixRotSum', rot);   // Täti MA (Flexibel)
       
       // LIVE Block
       setTxt('poolLiveSum', sumLive);
       setTxt('poolPlanLiveSum', totalNeedLive);
       setTxt('poolPlanLiveFrSum', frueh);  // Frühdienst MA (06:00-15:30)
       setTxt('poolPlanLiveSpSum', spaet);  // Spätdienst MA (15:30-19:00)
-      setTxt('poolPlanLiveRotSum', rot);   // Rotation MA (Flexibel)
+      setTxt('poolPlanLiveRotSum', rot);   // Täti MA (Flexibel)
     }catch(e){ 
       console.warn('Pool totals update failed', e); 
     }
@@ -4097,7 +4097,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ datum, maFrueh, maSpat, maRotation })
       });
-      console.log('💾 MA gespeichert:', datum, 'FRÜH:', maFrueh, 'SPÄT:', maSpat, 'ROT:', maRotation);
+      console.log('💾 MA gespeichert:', datum, 'FRÜH:', maFrueh, 'SPÄT:', maSpat, 'Täti:', maRotation);
     } catch (error) {
       console.error('Fehler beim Speichern Mitarbeiter:', error);
     }
@@ -4233,7 +4233,7 @@
       await saveMitarbeiterToDB(datum, countFrueh, countSpat, countRotation);
       updateMitarbeiterDisplay();
       
-      console.log('✅ MA-Import:', datum, '| FRÜH:', countFrueh, 'SPÄT:', countSpat, 'ROT:', countRotation);
+      console.log('✅ MA-Import:', datum, '| FRÜH:', countFrueh, 'SPÄT:', countSpat, 'Täti:', countRotation);
       return true;
       
     } catch (error) {
