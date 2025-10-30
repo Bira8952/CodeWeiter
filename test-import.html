@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Import Test - Einsatzplanung</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #f5f7fa;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      padding: 15px;
+      min-width: 1024px;
+    }
+
+    .container {
+      max-width: 1800px;
+      margin: 0 auto;
+    }
+
+
+    /* Desktop-Optimierung */
+    @media (min-width: 1920px) {
+      .container {
+        max-width: 1800px;
+      }
+      body {
+        padding: 20px;
+      }
+    }
+
+    @media (min-width: 1680px) and (max-width: 1919px) {
+      .container {
+        max-width: 1600px;
+      }
+      body {
+        padding: 18px;
+      }
+    }
+
+    @media (min-width: 1440px) and (max-width: 1679px) {
+      .container {
+        max-width: 1380px;
+      }
+      body {
+        padding: 16px;
+      }
+    }
+
+    @media (min-width: 1366px) and (max-width: 1439px) {
+      .container {
+        max-width: 1320px;
+      }
+    }
+
+    @media (min-width: 1280px) and (max-width: 1365px) {
+      .container {
+        max-width: 1240px;
+      }
+    }
+
+    @media (min-width: 1024px) and (max-width: 1279px) {
+      .container {
+        max-width: 980px;
+      }
+    }
+
+    .nav-bar {
+      background: white;
+      border-radius: 6px;
+      padding: 10px 15px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 10px;
+    }
+
+    .nav-link {
+      background: #f5f7fa;
+      color: #4a90e2;
+      border: 1px solid #dee2e6;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .nav-link:hover {
+      background: #4a90e2;
+      color: white;
+    }
+
+    .nav-link.active {
+      background: #4a90e2;
+      color: white;
+    }
+
+    .settings-label {
+      font-size: 13px;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .dev-mode-btn {
+      background: #dc3545;
+      color: white;
+      border: 1px solid #dc3545;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .dev-mode-btn:hover {
+      background: #c82333;
+      border-color: #c82333;
+    }
+
+    .container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 25px;
+    }
+
+    h1 {
+      color: #107c41;
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 25px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      background: white;
+      border: 1px solid #dee2e6;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .button:hover {
+      background: #f8f9fa;
+      border-color: #4a90e2;
+    }
+
+    .button:active {
+      background: #e9ecef;
+    }
+
+    .button.primary {
+      background: #107c41;
+      color: white;
+      border-color: #107c41;
+    }
+
+    .button.primary:hover {
+      background: #0d6334;
+      border-color: #0d6334;
+    }
+
+    .button.secondary {
+      background: #4a90e2;
+      color: white;
+      border-color: #4a90e2;
+    }
+
+    .button.secondary:hover {
+      background: #3a7bc8;
+      border-color: #3a7bc8;
+    }
+
+    .button.danger {
+      background: #dc3545;
+      color: white;
+      border-color: #dc3545;
+    }
+
+    .button.danger:hover {
+      background: #c82333;
+      border-color: #c82333;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .stat-box {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid #dee2e6;
+    }
+
+    .stat-number {
+      font-size: 36px;
+      font-weight: 700;
+      color: #107c41;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      color: #6c757d;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .day-list {
+      margin-top: 20px;
+      max-height: 450px;
+      overflow-y: auto;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+    }
+
+    .day-item {
+      padding: 15px 20px;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.15s ease;
+    }
+
+    .day-item:last-child {
+      border-bottom: none;
+    }
+
+    .day-item.has-data {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+    }
+
+    .day-item.no-data {
+      background: #f8d7da;
+      border-left: 4px solid #dc3545;
+    }
+
+    .day-item:hover {
+      background: #f8f9fa;
+    }
+
+    .day-item.has-data:hover {
+      background: #c3e6cb;
+    }
+
+    .day-item.no-data:hover {
+      background: #f5c6cb;
+    }
+
+    .day-date {
+      font-weight: 600;
+      color: #212529;
+      font-size: 14px;
+    }
+
+    .day-counts {
+      font-size: 12px;
+      color: #6c757d;
+      font-weight: 500;
+    }
+
+    .gap-warning {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-left: 4px solid #ffc107;
+      padding: 15px 20px;
+      border-radius: 6px;
+      margin: 20px 0;
+      color: #856404;
+      font-size: 14px;
+    }
+
+    .gap-warning strong {
+      color: #533f03;
+    }
+
+    #passwordOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .password-box {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .password-box h2 {
+      color: #dc3545;
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+
+    .password-box p {
+      color: #6c757d;
+      margin-bottom: 25px;
+      font-size: 14px;
+    }
+
+    .password-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #dee2e6;
+      border-radius: 6px;
+      font-size: 16px;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+    }
+
+    .password-input:focus {
+      outline: none;
+      border-color: #4a90e2;
+    }
+
+    .password-submit {
+      width: 100%;
+      padding: 12px 16px;
+      background: #107c41;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .password-submit:hover {
+      background: #0d6334;
+    }
+
+    .password-error {
+      color: #dc3545;
+      font-size: 13px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Dark Mode */
+    body.dark-mode {
+      background-color: #1a1a2e;
+      color: #e0e0e0;
+    }
+
+    body.dark-mode .nav-bar {
+      background: #2d2d44;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    body.dark-mode .nav-link {
+      background: #3a3a54;
+      color: #8ab4f8;
+      border-color: #555;
+    }
+
+    body.dark-mode .nav-link:hover,
+    body.dark-mode .nav-link.active {
+      background: #4a90e2;
+      color: white;
+    }
+
+    body.dark-mode .settings-label {
+      color: #a0a0a0;
+    }
+
+    body.dark-mode .container {
+      background: #2d2d44;
+    }
+
+    body.dark-mode h1 {
+      color: #8ab4f8;
+    }
+
+    body.dark-mode .button {
+      background: #3a3a54;
+      color: #e0e0e0;
+      border-color: #555;
+    }
+
+    body.dark-mode .button:hover {
+      background: #4a5a6a;
+      border-color: #8ab4f8;
+    }
+
+    body.dark-mode .button.primary {
+      background: #107c41;
+      color: white;
+    }
+
+    body.dark-mode .button.primary:hover {
+      background: #0d6334;
+    }
+
+    body.dark-mode .button.danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    body.dark-mode .button.danger:hover {
+      background: #c82333;
+    }
+
+    body.dark-mode .stat-box {
+      background: #3a3a54;
+      border-color: #555;
+    }
+
+    body.dark-mode .stat-number {
+      color: #8ab4f8;
+    }
+
+    body.dark-mode .stat-label {
+      color: #a0a0a0;
+    }
+
+    body.dark-mode .day-list {
+      border-color: #555;
+    }
+
+    body.dark-mode .day-item {
+      border-bottom-color: #555;
+      color: #e0e0e0;
+    }
+
+    body.dark-mode .day-date {
+      color: #e0e0e0;
+    }
+
+    body.dark-mode .day-counts {
+      color: #a0a0a0;
+    }
+
+    body.dark-mode .password-box {
+      background: #2d2d44;
+      color: #e0e0e0;
+    }
+
+    body.dark-mode .password-box h2 {
+      color: #dc3545;
+    }
+
+    body.dark-mode .password-input {
+      background: #3a3a54;
+      border-color: #555;
+      color: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+  <div id="passwordOverlay">
+    <div class="password-box">
+      <h2>🔒 Entwickler-Zugang</h2>
+      <p>Diese Seite ist nur für Entwickler zugänglich.<br>Bitte geben Sie das Passwort ein:</p>
+      <input 
+        type="password" 
+        id="passwordInput" 
+        class="password-input" 
+        placeholder="Passwort eingeben"
+        autocomplete="off"
+      >
+      <button class="password-submit" onclick="checkPassword()">Zugriff freigeben</button>
+      <div id="passwordError" class="password-error">❌ Falsches Passwort!</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="nav-bar" style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <span class="settings-label">Einstellungen:</span>
+        <button class="nav-link" id="darkModeBtn" onclick="toggleDarkMode()" style="cursor: pointer; border: none;">
+          <span id="darkModeText">Dunkelmodus</span>
+        </button>
+        <button class="nav-link" id="devModeBtn" onclick="toggleDevMode()" style="cursor: pointer; border: none; background: #dc3545; color: white;">
+          <span id="devModeText">Developer-Modus</span>
+        </button>
+      </div>
+      
+      <div style="flex: 1;"></div>
+
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Einsatzplanung</a>
+        <a href="seite3.html" class="nav-link">Mitarbeiter</a>
+        <a href="test-import.html" class="nav-link" style="background: #4a90e2; color: white;">Test & Diagnose</a>
+      </div>
+    </div>
+
+    <div id="mainContent">
+    <h1>🔍 Import Test & Lückenprüfung</h1>
+    
+    <div class="toolbar">
+      <button class="button primary" onclick="analyzeData()">🔍 Daten analysieren</button>
+      <button class="button danger" onclick="clearAllData()">🗑️ Alle Daten löschen</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-number" id="totalDays">-</div>
+        <div class="stat-label">Tage importiert</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="daysWithData">-</div>
+        <div class="stat-label">Tage mit Daten</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="totalEmployees">-</div>
+        <div class="stat-label">Mitarbeiter gesamt</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="gapsFound">-</div>
+        <div class="stat-label">Lücken gefunden</div>
+      </div>
+    </div>
+
+    <div id="gapWarning"></div>
+    <div id="dayList" class="day-list"></div>
+  </div>
+
+  <script>
+    // Passwortschutz mit Hash (Passwort wird nicht im Klartext gespeichert)
+    // Hash von '123' - für mehr Sicherheit sollten Sie ein stärkeres Passwort verwenden
+    const PASSWORD_HASH = 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3';
+    
+    async function hashPassword(password) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex;
+    }
+    
+    async function checkPassword() {
+      const input = document.getElementById('passwordInput');
+      const error = document.getElementById('passwordError');
+      const password = input.value;
+      
+      const inputHash = await hashPassword(password);
+      
+      if (inputHash === PASSWORD_HASH) {
+        localStorage.setItem('devAccess', 'granted');
+        document.getElementById('passwordOverlay').classList.add('hidden');
+        document.getElementById('mainContent').style.display = 'block';
+        error.style.display = 'none';
+      } else {
+        error.style.display = 'block';
+        input.value = '';
+        input.focus();
+        
+        setTimeout(() => {
+          error.style.display = 'none';
+        }, 2000);
+      }
+    }
+    
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+      document.getElementById('darkModeText').textContent = isDark ? 'Hellmodus' : 'Dunkelmodus';
+    }
+
+    function initDarkMode() {
+      const darkMode = localStorage.getItem('darkMode');
+      if (darkMode === 'enabled') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('darkModeText').textContent = 'Hellmodus';
+      }
+    }
+
+    function initDevMode() {
+      const devAccess = localStorage.getItem('devAccess');
+      const btn = document.getElementById('devModeBtn');
+      const btnText = document.getElementById('devModeText');
+      
+      if (devAccess === 'granted') {
+        if (btn) {
+          btn.style.background = '#28a745';
+          btn.style.borderColor = '#28a745';
+        }
+        if (btnText) {
+          btnText.textContent = '✅ Entwickler-Modus';
+        }
+      }
+    }
+
+    function toggleDevMode() {
+      const devAccess = localStorage.getItem('devAccess');
+      
+      if (devAccess === 'granted') {
+        // Entwickler-Modus deaktivieren
+        if (confirm('Entwickler-Modus deaktivieren?')) {
+          localStorage.removeItem('devAccess');
+          window.location.href = 'index.html';
+        }
+      }
+    }
+
+    // Enter-Taste im Passwortfeld
+    document.addEventListener('DOMContentLoaded', function() {
+      const input = document.getElementById('passwordInput');
+      
+      // Initialisiere Dark Mode und Dev Mode
+      initDarkMode();
+      initDevMode();
+      
+      // Prüfe ob Zugang bereits gewährt wurde
+      if (localStorage.getItem('devAccess') === 'granted') {
+        document.getElementById('passwordOverlay').classList.add('hidden');
+        document.getElementById('mainContent').style.display = 'block';
+      } else {
+        document.getElementById('mainContent').style.display = 'none';
+        input.focus();
+      }
+      
+      input.addEventListener('keypress', async function(e) {
+        if (e.key === 'Enter') {
+          await checkPassword();
+        }
+      });
+    });
+
+    function analyzeData() {
+      const allKeys = Object.keys(localStorage).filter(key => key.startsWith('einsatzplan_'));
+      
+      if (allKeys.length === 0) {
+        alert('Keine Daten gefunden!\n\nBitte importieren Sie zuerst Daten auf Seite 3.');
+        return;
+      }
+
+      // Parse all dates and sort
+      const dates = allKeys.map(key => {
+        const dateStr = key.replace('einsatzplan_', '');
+        return {
+          key: key,
+          date: new Date(dateStr),
+          dateStr: dateStr,
+          data: JSON.parse(localStorage.getItem(key))
+        };
+      }).sort((a, b) => a.date - b.date);
+
+      // Calculate statistics
+      let totalEmployees = 0;
+      let daysWithData = 0;
+      const gaps = [];
+
+      dates.forEach((item, index) => {
+        const data = item.data;
+        const sum = (data.maImpf || 0) + (data.maHtvo || 0) + (data.maImp || 0) + 
+                    (data.maSpat || 0) + (data.maHtna || 0) + (data.maImps || 0);
+        
+        totalEmployees += sum;
+        if (sum > 0) daysWithData++;
+
+        // Check for gaps
+        if (index > 0) {
+          const prevDate = dates[index - 1].date;
+          const currDate = item.date;
+          const daysDiff = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
+          
+          if (daysDiff > 1) {
+            gaps.push({
+              from: dates[index - 1].dateStr,
+              to: item.dateStr,
+              days: daysDiff - 1
+            });
+          }
+        }
+      });
+
+      // Update statistics
+      document.getElementById('totalDays').textContent = dates.length;
+      document.getElementById('daysWithData').textContent = daysWithData;
+      document.getElementById('totalEmployees').textContent = totalEmployees;
+      document.getElementById('gapsFound').textContent = gaps.length;
+
+      // Show gaps warning
+      const gapWarning = document.getElementById('gapWarning');
+      if (gaps.length > 0) {
+        gapWarning.innerHTML = `
+          <div class="gap-warning">
+            <strong>⚠️ Lücken gefunden:</strong><br>
+            ${gaps.map(g => `${g.from} → ${g.to} (${g.days} Tage fehlen)`).join('<br>')}
+          </div>
+        `;
+      } else {
+        gapWarning.innerHTML = '';
+      }
+
+      // Display day list
+      const dayList = document.getElementById('dayList');
+      dayList.innerHTML = dates.map(item => {
+        const data = item.data;
+        const sum = (data.maFrueh || 0) + (data.maSpat || 0) + (data.maRotation || 0);
+        
+        const hasData = sum > 0;
+        const dateFormatted = item.date.toLocaleDateString('de-DE', { 
+          weekday: 'short', 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric' 
+        });
+        
+        const counts = hasData ? 
+          `FRÜH: ${data.maFrueh || 0}, SPÄT: ${data.maSpat || 0}, ROTATION: ${data.maRotation || 0}` :
+          'Keine Daten';
+
+        return `
+          <div class="day-item ${hasData ? 'has-data' : 'no-data'}">
+            <div class="day-date">${dateFormatted}</div>
+            <div class="day-counts">${counts}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function clearAllData() {
+      if (!confirm('Wirklich ALLE importierten Daten löschen?')) return;
+      
+      const allKeys = Object.keys(localStorage).filter(key => key.startsWith('einsatzplan_'));
+      allKeys.forEach(key => localStorage.removeItem(key));
+      
+      alert(`${allKeys.length} Tage wurden gelöscht.`);
+      location.reload();
+    }
+
+    // Auto-analyze on load
+    window.addEventListener('DOMContentLoaded', analyzeData);
+  </script>
+</body>
+</html>
