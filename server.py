@@ -10,9 +10,9 @@ app = Flask(__name__, static_folder='.')
 CORS(app)
 
 # Google Sheets Config
-GOOGLE_SHEETS_ID = "1EhhG5Da2kDpLMktcrSdn1DTMnr_XLEdJyNUI2ZwLuQ4"
+GOOGLE_SHEETS_ID = "14e85oqQrUjywXjNasJz7azME0t18RJEEldgRwCRFiH4"
 LIVEVOL_SHEET_GID = "0"  # Erster Tab für Live-Vol Daten
-POOLS_CONFIG_SHEET_GID = "2008543883"  # Pool-Konfiguration Tab (NAME, START, DEADLINE, FAKTOR, RATE, SCHICHT)
+POOLS_CONFIG_SHEET_GID = "0"  # Pool-Konfiguration Tab (NAME, START, DEADLINE, FAKTOR, RATE, SCHICHT)
 
 def fetch_google_sheet_csv(sheet_id, gid="0"):
     """Lädt Google Sheet als CSV"""
