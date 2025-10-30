@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mitarbeiter Daten - Einsatzplanung</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: #f5f7fa;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    padding: 10px;
+    overflow: hidden;
+    min-width: 1024px;
+  }
+
+  .container {
+    max-width: 100%;
+    margin: 0 auto;
+    height: calc(100vh - 20px);
+    display: flex;
+    flex-direction: column;
+  }
+
+
+  /* Desktop-Optimierung */
+  @media (min-width: 1920px) {
+    .container {
+      max-width: 1800px;
+    }
+    body {
+      padding: 20px;
+    }
+  }
+
+  @media (min-width: 1680px) and (max-width: 1919px) {
+    .container {
+      max-width: 1600px;
+    }
+    body {
+      padding: 18px;
+    }
+  }
+
+  @media (min-width: 1440px) and (max-width: 1679px) {
+    .container {
+      max-width: 1380px;
+    }
+    body {
+      padding: 16px;
+    }
+  }
+
+  @media (min-width: 1366px) and (max-width: 1439px) {
+    .container {
+      max-width: 1320px;
+    }
+  }
+
+  @media (min-width: 1280px) and (max-width: 1365px) {
+    .container {
+      max-width: 1240px;
+    }
+  }
+
+  @media (min-width: 1024px) and (max-width: 1279px) {
+    .container {
+      max-width: 980px;
+    }
+  }
+
+  .nav-bar {
+    background: white;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .nav-link {
+    background: #f5f7fa;
+    color: #4a90e2;
+    border: 1px solid #dee2e6;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+
+  .nav-link:hover {
+    background: #4a90e2;
+    color: white;
+  }
+
+  .nav-link.active {
+    background: #4a90e2;
+    color: white;
+  }
+
+  .settings-label {
+    font-size: 13px;
+    color: #666;
+    font-weight: 500;
+  }
+
+  .dev-mode-btn {
+    background: #dc3545;
+    color: white;
+    border: 1px solid #dc3545;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .dev-mode-btn:hover {
+    background: #c82333;
+    border-color: #c82333;
+  }
+
+  .toolbar {
+    background: white;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .toolbar-btn {
+    background: white;
+    border: 1px solid #dee2e6;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .toolbar-btn:hover {
+    background: #f8f9fa;
+    border-color: #4a90e2;
+  }
+
+  .toolbar-btn:active {
+    background: #e9ecef;
+  }
+
+  .spreadsheet-wrapper {
+    flex: 1;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .spreadsheet-header {
+    background: #107c41;
+    color: white;
+    padding: 10px 15px;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .excel-container {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    min-height: 0;
+  }
+
+  .loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #107c41;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .loading p {
+    margin-top: 20px;
+    color: #107c41;
+    font-weight: 600;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+
+  .no-excel-message {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+  }
+
+  .no-excel-message h2 {
+    color: #107c41;
+    margin-bottom: 15px;
+  }
+
+  .no-excel-message p {
+    margin-bottom: 25px;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .no-excel-message button {
+    background: #107c41;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .no-excel-message button:hover {
+    background: #0e6635;
+  }
+
+  body.dark-mode {
+    background-color: #1a1a2e;
+  }
+
+  body.dark-mode .nav-bar,
+  body.dark-mode .toolbar,
+  body.dark-mode .spreadsheet-wrapper {
+    background: #2d2d44;
+  }
+
+  body.dark-mode .nav-link {
+    background: #3a3a54;
+    color: #8ab4f8;
+    border-color: #555;
+  }
+
+  body.dark-mode .nav-link:hover,
+  body.dark-mode .nav-link.active {
+    background: #4a90e2;
+    color: white;
+  }
+
+  body.dark-mode .settings-label {
+    color: #a0a0a0;
+  }
+
+  body.dark-mode .toolbar-btn {
+    background: #3a3a54;
+    color: #e0e0e0;
+    border-color: #555;
+  }
+
+  body.dark-mode .toolbar-btn:hover {
+    background: #4a5a6a;
+  }
+
+  body.dark-mode .loading {
+    background: #2d2d44;
+  }
+
+  body.dark-mode .no-excel-message {
+    color: #e0e0e0;
+  }
+
+  body.dark-mode .no-excel-message h2 {
+    color: #8ab4f8;
+  }
+
+  @media print {
+    .nav-bar,
+    .toolbar {
+      display: none;
+    }
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    padding: 20px;
+  }
+
+  .modal-box {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+    max-width: 520px;
+    width: 100%;
+    padding: 25px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .modal-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+  }
+
+  .modal-icon.info {
+    background: rgba(16, 124, 65, 0.1);
+    color: #107c41;
+  }
+
+  .modal-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #101828;
+  }
+
+  .modal-content {
+    font-size: 15px;
+    color: #475467;
+    line-height: 1.6;
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .modal-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 10px 18px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .modal-btn-primary {
+    background: #107c41;
+    color: white;
+  }
+
+  .modal-btn-primary:hover {
+    background: #0e6635;
+  }
+
+  .modal-btn-secondary {
+    background: #f8fafc;
+    color: #475467;
+  }
+
+  .modal-btn-secondary:hover {
+    background: #e2e8f0;
+  }
+
+  .iframe-input {
+    width: 100%;
+    border: 1px solid #d0d5dd;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+
+  .iframe-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+  }
+
+  body.dark-mode .iframe-label {
+    color: #e0e0e0;
+  }
+
+  body.dark-mode .iframe-input {
+    background: #3a3a54;
+    border-color: #555;
+    color: #e0e0e0;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav-bar" style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <span class="settings-label">Einstellungen:</span>
+        <button class="nav-link" id="darkModeBtn" onclick="toggleDarkMode()" style="cursor: pointer; border: none;">
+          <span id="darkModeText">Dunkelmodus</span>
+        </button>
+        <button class="nav-link" id="devModeBtn" onclick="toggleDevMode()" style="cursor: pointer; border: none; background: #dc3545; color: white;">
+          <span id="devModeText">Developer-Modus</span>
+        </button>
+      </div>
+      
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button class="toolbar-btn" onclick="importFromGoogleSheets()" style="background: rgba(16, 124, 65, 0.1); color: #107c41; border-color: rgba(16, 124, 65, 0.3); font-weight: 600;">
+          <span>📥 Von Google Sheets importieren</span>
+        </button>
+        <button class="toolbar-btn" onclick="showSheetConfig()">
+          <span>Tabelle konfigurieren</span>
+        </button>
+        <button class="toolbar-btn" onclick="openSheetOnline()">
+          <span>Online bearbeiten</span>
+        </button>
+      </div>
+
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Einsatzplanung</a>
+        <a href="seite3.html" class="nav-link" style="background: #4a90e2; color: white;">Mitarbeiter</a>
+        <a href="produkte-import.html" class="nav-link">Produkte Import</a>
+        <a href="test-import.html" class="nav-link" id="navTest" style="display: inline-block;">Test & Diagnose</a>
+      </div>
+    </div>
+
+    <div class="spreadsheet-wrapper">
+      <div class="spreadsheet-header">
+        <span id="sheetHeaderTitle">Mitarbeiter Tabelle</span>
+      </div>
+      <div class="excel-container" id="excelContainer">
+        <div id="noExcelMessage" class="no-excel-message">
+          <h2>Keine Tabelle konfiguriert</h2>
+          <p>
+            Klicken Sie auf "Tabelle konfigurieren", um die URL Ihrer Google Sheets Tabelle einzugeben.
+          </p>
+          <button onclick="showSheetConfig()">Jetzt konfigurieren</button>
+        </div>
+        <div class="loading hidden" id="loading">
+          <div class="spinner"></div>
+          <p>Tabelle wird geladen...</p>
+        </div>
+        <iframe id="excelFrame" scrolling="yes" class="hidden"></iframe>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const iframe = document.getElementById('excelFrame');
+  const loading = document.getElementById('loading');
+  const noExcelMessage = document.getElementById('noExcelMessage');
+
+  window.importCSVForAllDays = async function() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const loadingOverlay = document.createElement('div');
+      loadingOverlay.className = 'modal-overlay';
+      loadingOverlay.innerHTML = `
+        <div class="modal-box" style="max-width: 400px;">
+          <div class="modal-header">
+            <div class="modal-icon info">⏳</div>
+            <div class="modal-title">CSV wird geladen...</div>
+          </div>
+          <div class="modal-content" style="text-align: center; padding: 30px;">
+            <div style="margin: 20px 0;">Bitte warten...</div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(loadingOverlay);
+      
+      try {
+        const text = await file.text();
+        
+        // Auto-detect separator (comma or semicolon)
+        const firstLine = text.split('\n')[0] || '';
+        const separator = firstLine.includes(';') ? ';' : ',';
+        
+        const lines = text.split('\n').map(line => {
+          const parts = [];
+          let current = '';
+          let inQuotes = false;
+          
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') {
+              inQuotes = !inQuotes;
+            } else if (char === separator && !inQuotes) {
+              parts.push(current);
+              current = '';
+            } else {
+              current += char;
+            }
+          }
+          parts.push(current);
+          return parts;
+        });
+        
+        const dateRow = lines[3] || [];
+        const datumSpalten = [];
+        
+        for (let col = 1; col < dateRow.length; col++) {
+          const datum = dateRow[col]?.trim();
+          if (datum && datum.match(/\d{2}\.\d{2}\./)) {
+            datumSpalten.push({ col, datum });
+          }
+        }
+        
+        if (datumSpalten.length === 0) {
+          loadingOverlay.remove();
+          await customAlert('Keine Datumsangaben in der CSV gefunden.', 'Fehler', 'error');
+          return;
+        }
+        
+        loadingOverlay.querySelector('.modal-content').innerHTML = `
+          <div style="text-align: center; padding: 20px;">
+            <div style="margin: 20px 0;">Importiere <strong>${datumSpalten.length} Tage</strong>...</div>
+            <div id="importProgress" style="margin-top: 15px; font-size: 13px; color: #6c757d;"></div>
+          </div>
+        `;
+        
+        let importedCount = 0;
+        
+        for (const { col, datum } of datumSpalten) {
+          const progressEl = document.getElementById('importProgress');
+          if (progressEl) {
+            progressEl.textContent = `${datum} wird importiert... (${importedCount + 1}/${datumSpalten.length})`;
+          }
+          
+          const datumParts = datum.match(/(\d{2})\.(\d{2})\./);
+          if (!datumParts) continue;
+          
+          const tag = parseInt(datumParts[1], 10);
+          const monat = parseInt(datumParts[2], 10);
+          const jahr = new Date().getFullYear();
+          const dateStr = `${jahr}-${String(monat).padStart(2, '0')}-${String(tag).padStart(2, '0')}`;
+          
+          let countFrueh = 0;
+          let countSpat = 0;
+          let countRotation = 0;
+          
+          for (let row = 5; row < lines.length; row++) {
+            const zeile = lines[row];
+            const mitarbeiter = zeile[0]?.toString().trim();
+            
+            if (!mitarbeiter || mitarbeiter.length === 0) continue;
+            
+            let schichtCode = zeile[col]?.toString().trim().toUpperCase() || '';
+            
+            if (!schichtCode || schichtCode === '-' || schichtCode === '') continue;
+            
+            schichtCode = schichtCode.replace(/^\d+\s*/, '');
+            
+            if (schichtCode === 'FT' || schichtCode === 'A' || schichtCode === 'U' || schichtCode === 'K' || schichtCode === 'URD' || schichtCode === 'KA') continue;
+            
+            if (schichtCode === 'FRÜH' || schichtCode === 'FRUEH' || schichtCode.startsWith('FRÜH') || schichtCode.startsWith('FRUEH')) {
+              countFrueh++;
+            } else if (schichtCode === 'SPÄT' || schichtCode === 'SPAT' || schichtCode.startsWith('SPÄT') || schichtCode.startsWith('SPAT')) {
+              countSpat++;
+            } else if (schichtCode === 'ROTATION' || schichtCode.startsWith('ROTATION') || schichtCode === 'ROT') {
+              countRotation++;
+            }
+          }
+          
+          const data = {
+            maFrueh: countFrueh,
+            maSpat: countSpat,
+            maRotation: countRotation
+          };
+          
+          localStorage.setItem(`einsatzplan_${dateStr}`, JSON.stringify(data));
+          importedCount++;
+          
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        
+        loadingOverlay.remove();
+        await customAlert(
+          `✅ Import erfolgreich!\n\n${importedCount} Tage wurden importiert.\n\nGehen Sie zur Einsatzplanung-Seite, um die Daten anzuzeigen.`, 
+          'Erfolgreich', 
+          'success'
+        );
+        
+      } catch (error) {
+        loadingOverlay.remove();
+        console.error('Fehler beim CSV-Import:', error);
+        await customAlert('Fehler beim Import der CSV-Datei.\n\n' + error.message, 'Fehler', 'error');
+      }
+    };
+    
+    input.click();
+  }
+
+  window.importFromGoogleSheets = async function() {
+    if (!excelUrl) {
+      await customAlert('Bitte konfigurieren Sie zuerst eine Google Sheets URL.\n\nKlicken Sie auf "Tabelle konfigurieren" und fügen Sie Ihren Google Sheets Link ein.', 'Fehler', 'error');
+      return;
+    }
+
+    const match = excelUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if (!match) {
+      await customAlert('Die konfigurierte URL ist kein Google Sheets Link.\n\nBitte verwenden Sie "CSV-Datei importieren" für andere Dateien.', 'Fehler', 'error');
+      return;
+    }
+
+    const spreadsheetId = match[1];
+    let csvExportUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv`;
+    
+    // CORS-Proxy für lokale Nutzung (file://) hinzufügen
+    if (window.location.protocol === 'file:') {
+      csvExportUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(csvExportUrl)}`;
+    }
+
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.className = 'modal-overlay';
+    loadingOverlay.innerHTML = `
+      <div class="modal-box" style="max-width: 400px;">
+        <div class="modal-header">
+          <div class="modal-icon info">⏳</div>
+          <div class="modal-title">Google Sheets wird geladen...</div>
+        </div>
+        <div class="modal-content" style="text-align: center; padding: 30px;">
+          <div style="margin: 20px 0;">Bitte warten...</div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(loadingOverlay);
+
+    try {
+      const response = await fetch(csvExportUrl);
+      if (!response.ok) {
+        throw new Error('Google Sheets konnte nicht geladen werden. Stellen Sie sicher, dass das Sheet öffentlich zugänglich ist.');
+      }
+
+      const text = await response.text();
+      
+      // Auto-detect separator (comma or semicolon)
+      const firstLine = text.split('\n')[0] || '';
+      const separator = firstLine.includes(';') ? ';' : ',';
+      
+      const lines = text.split('\n').map(line => {
+        const parts = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === separator && !inQuotes) {
+            parts.push(current);
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        parts.push(current);
+        return parts;
+      });
+
+      const dateRow = lines[3] || [];
+      const datumSpalten = [];
+
+      for (let col = 1; col < dateRow.length; col++) {
+        const datum = dateRow[col]?.trim();
+        if (datum && datum.match(/\d{2}\.\d{2}\./)) {
+          datumSpalten.push({ col, datum });
+        }
+      }
+
+      if (datumSpalten.length === 0) {
+        loadingOverlay.remove();
+        await customAlert('Keine Datumsangaben im Google Sheet gefunden.\n\nStellen Sie sicher, dass Zeile 4 Datumsangaben im Format DD.MM. enthält.', 'Fehler', 'error');
+        return;
+      }
+
+      loadingOverlay.querySelector('.modal-content').innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+          <div style="margin: 20px 0;">Importiere <strong>${datumSpalten.length} Tage</strong>...</div>
+          <div id="importProgress" style="margin-top: 15px; font-size: 13px; color: #6c757d;"></div>
+        </div>
+      `;
+
+      let importedCount = 0;
+      let letzterMonat = null;
+      let aktuellesJahr = new Date().getFullYear();
+
+      for (const { col, datum } of datumSpalten) {
+        const progressEl = document.getElementById('importProgress');
+        if (progressEl) {
+          progressEl.textContent = `${datum} wird importiert... (${importedCount + 1}/${datumSpalten.length})`;
+        }
+
+        const datumParts = datum.match(/(\d{2})\.(\d{2})\./);
+        if (!datumParts) continue;
+
+        const tag = parseInt(datumParts[1], 10);
+        const monat = parseInt(datumParts[2], 10);
+        
+        // Intelligente Jahreserkennung: Wenn Monat nach hinten springt, ist es nächstes Jahr
+        if (letzterMonat !== null && monat < letzterMonat && (letzterMonat - monat) > 6) {
+          aktuellesJahr++;
+        }
+        letzterMonat = monat;
+        
+        const jahr = aktuellesJahr;
+        const dateStr = `${jahr}-${String(monat).padStart(2, '0')}-${String(tag).padStart(2, '0')}`;
+
+        let countFrueh = 0;
+        let countSpat = 0;
+        let countRotation = 0;
+
+        for (let row = 5; row < lines.length; row++) {
+          const zeile = lines[row];
+          const mitarbeiter = zeile[0]?.toString().trim();
+
+          if (!mitarbeiter || mitarbeiter.length === 0) continue;
+
+          let schichtCode = zeile[col]?.toString().trim().toUpperCase() || '';
+
+          if (!schichtCode || schichtCode === '-' || schichtCode === '') continue;
+
+          schichtCode = schichtCode.replace(/^\d+\s*/, '');
+
+          if (schichtCode === 'FT' || schichtCode === 'A' || schichtCode === 'U' || schichtCode === 'K' || schichtCode === 'URD' || schichtCode === 'KA') continue;
+
+          if (schichtCode === 'FRÜH' || schichtCode === 'FRUEH' || schichtCode.startsWith('FRÜH') || schichtCode.startsWith('FRUEH')) {
+            countFrueh++;
+          } else if (schichtCode === 'SPÄT' || schichtCode === 'SPAT' || schichtCode.startsWith('SPÄT') || schichtCode.startsWith('SPAT')) {
+            countSpat++;
+          } else if (schichtCode === 'ROTATION' || schichtCode.startsWith('ROTATION') || schichtCode === 'ROT') {
+            countRotation++;
+          }
+        }
+
+        const data = {
+          maFrueh: countFrueh,
+          maSpat: countSpat,
+          maRotation: countRotation
+        };
+
+        localStorage.setItem(`einsatzplan_${dateStr}`, JSON.stringify(data));
+        importedCount++;
+
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+
+      loadingOverlay.remove();
+      await customAlert(
+        `✅ Import erfolgreich!\n\n${importedCount} Tage wurden aus Google Sheets importiert.`, 
+        'Erfolgreich', 
+        'success'
+      );
+
+    } catch (error) {
+      loadingOverlay.remove();
+      console.error('Fehler beim Google Sheets Import:', error);
+      await customAlert('Fehler beim Import von Google Sheets.\n\n' + error.message + '\n\nStellen Sie sicher, dass das Google Sheet öffentlich zugänglich ist.', 'Fehler', 'error');
+    }
+  }
+
+  const defaultExcelUrl = 'https://docs.google.com/spreadsheets/d/15yfflPhE6Lqykm8aqacnZcrJj0x0Y1Yd/edit?usp=sharing';
+  const ALWAYS_USE_DEFAULT_EXCEL_URL = true;
+  let excelUrl = localStorage.getItem('excelUrl') || defaultExcelUrl;
+
+  function init() {
+    if (ALWAYS_USE_DEFAULT_EXCEL_URL || !excelUrl) {
+      excelUrl = defaultExcelUrl;
+      localStorage.setItem('excelUrl', excelUrl);
+    }
+
+    if (excelUrl) {
+      loadExcel();
+      noExcelMessage.classList.add('hidden');
+    } else {
+      noExcelMessage.classList.remove('hidden');
+      iframe.classList.add('hidden');
+    }
+  }
+
+  function loadExcel() {
+    if (!excelUrl) {
+      noExcelMessage.classList.remove('hidden');
+      iframe.classList.add('hidden');
+      return;
+    }
+
+    const embedSrc = getEmbeddableUrl(excelUrl);
+    if (!embedSrc) {
+      noExcelMessage.classList.remove('hidden');
+      iframe.classList.add('hidden');
+      customAlert('Dieser Link kann nicht eingebettet werden. Bitte verwende in OneDrive oder SharePoint die Option "Einbetten" und kopiere die iframe URL.', 'Hinweis', 'info');
+      return;
+    }
+
+    loading.classList.remove('hidden');
+    noExcelMessage.classList.add('hidden');
+
+    const url = new URL(embedSrc);
+    url.searchParams.set('refresh', Date.now());
+    iframe.src = url.toString();
+    iframe.classList.remove('hidden');
+  }
+
+  iframe.addEventListener('load', function () {
+    setTimeout(() => {
+      loading.classList.add('hidden');
+    }, 400);
+  });
+
+  setTimeout(() => {
+    if (!loading.classList.contains('hidden')) {
+      loading.innerHTML = '<div class="spinner"></div><p>Laedt noch... OneDrive kann manchmal langsam sein.</p>';
+    }
+  }, 5000);
+
+  window.openSheetOnline = function() {
+    if (!excelUrl) {
+      customAlert('Bitte konfigurieren Sie zuerst eine Tabellen-URL.', 'Fehler', 'info');
+      window.showSheetConfig();
+      return;
+    }
+
+    let editUrl = excelUrl;
+    editUrl = editUrl.replace('action=embedview', 'action=edit');
+    editUrl = editUrl.replace('&wdAllowInteractivity=False', '');
+    editUrl = editUrl.replace('wdAllowInteractivity=False&', '');
+    editUrl = editUrl.replace('&em=2', '');
+    editUrl = editUrl.replace('em=2&', '');
+
+    window.open(editUrl, '_blank');
+  }
+
+  window.showSheetConfig = function() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+
+    overlay.innerHTML = `
+      <div class="modal-box">
+        <div class="modal-header">
+          <div class="modal-icon info">i</div>
+          <div class="modal-title">Tabelle konfigurieren</div>
+        </div>
+        <div class="modal-content">
+          <div class="iframe-input-group">
+            <label class="iframe-label">Tabellen-URL (Google Sheets):</label>
+            <input 
+              type="text" 
+              class="iframe-input" 
+              id="excelUrlInput" 
+              value="${excelUrl || ''}"
+              placeholder="z.B. https://docs.google.com/spreadsheets/d/..."
+            >
+          </div>
+          <div class="iframe-input-group">
+            <label class="iframe-label">So erhalten Sie die URL:</label>
+            <p style="font-size: 13px; color: #6c757d; line-height: 1.5;">
+              <strong>Google Sheets:</strong> Einfach die URL kopieren (z.B. https://docs.google.com/spreadsheets/d/...)
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn modal-btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+            Abbrechen
+          </button>
+          <button class="modal-btn modal-btn-primary" onclick="saveSheetUrl()">
+            Speichern
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) {
+        overlay.remove();
+      }
+    });
+
+    setTimeout(() => {
+      const input = document.getElementById('excelUrlInput');
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }, 100);
+  }
+
+  window.saveSheetUrl = function() {
+    const input = document.getElementById('excelUrlInput');
+    if (!input) return;
+
+    const url = input.value.trim();
+    if (!url) {
+      customAlert('Bitte gib eine gueltige URL ein.', 'Fehler', 'info');
+      return;
+    }
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      customAlert('Die URL muss mit http:// oder https:// beginnen.', 'Fehler', 'info');
+      return;
+    }
+
+    excelUrl = url;
+    localStorage.setItem('excelUrl', url);
+
+    const overlay = document.querySelector('.modal-overlay');
+    if (overlay) {
+      overlay.remove();
+    }
+
+    customAlert('Tabellen-URL wurde gespeichert!', 'Erfolgreich', 'info');
+    loadExcel();
+  }
+
+  function customAlert(message, title = 'Information', type = 'info') {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+
+      overlay.innerHTML = `
+        <div class="modal-box" style="max-width: 500px;">
+          <div class="modal-header">
+            <div class="modal-icon ${type}">i</div>
+            <div class="modal-title">${title}</div>
+          </div>
+          <div class="modal-content">${message}</div>
+          <div class="modal-footer">
+            <button class="modal-btn modal-btn-primary" onclick="this.closest('.modal-overlay').remove()">OK</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+      const button = overlay.querySelector('button');
+      if (button) {
+        button.focus();
+        button.onclick = () => {
+          overlay.remove();
+          resolve(true);
+        };
+      }
+
+      overlay.addEventListener('click', (event) => {
+        if (event.target === overlay) {
+          overlay.remove();
+          resolve(true);
+        }
+      });
+    });
+  }
+
+  function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+    const darkModeText = document.getElementById('darkModeText');
+    if (darkModeText) {
+      darkModeText.textContent = isDark ? 'Hellmodus' : 'Dunkelmodus';
+    }
+  }
+
+  function initDarkMode() {
+    const darkMode = localStorage.getItem('darkMode');
+    if (darkMode === 'enabled') {
+      document.body.classList.add('dark-mode');
+      const darkModeText = document.getElementById('darkModeText');
+      if (darkModeText) {
+        darkModeText.textContent = 'Hellmodus';
+      }
+    }
+  }
+
+  function addOrUpdateQueryParam(rawUrl, key, value) {
+    try {
+      const u = new URL(rawUrl);
+      u.searchParams.set(key, value);
+      return u.toString();
+    } catch (error) {
+      return rawUrl;
+    }
+  }
+
+  function getEmbeddableUrl(rawUrl) {
+    try {
+      const u = new URL(rawUrl);
+      const host = u.host.toLowerCase();
+      const path = u.pathname.toLowerCase();
+
+      if (host.includes('docs.google.com') && path.includes('/spreadsheets/')) {
+        const match = rawUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+        if (match) {
+          const spreadsheetId = match[1];
+          return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit?usp=sharing&rm=minimal`;
+        }
+      }
+
+      if (host.includes('sharepoint.com')) {
+        return addOrUpdateQueryParam(rawUrl, 'embed', '1');
+      }
+
+      if (host.includes('onedrive.live.com') && path.includes('/_layouts/15/doc.aspx')) {
+        return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(rawUrl)}`;
+      }
+
+      if (host.includes('onedrive.live.com')) {
+        if (path.includes('/embed')) return rawUrl;
+        if (path.includes('/view') || path.includes('/edit')) {
+          return rawUrl.replace('/view', '/embed').replace('/edit', '/embed');
+        }
+        if (u.searchParams.has('resid')) {
+          const base = `${u.protocol}//onedrive.live.com/embed`;
+          const params = u.searchParams;
+          params.set('em', '2');
+          return `${base}?${params.toString()}`;
+        }
+      }
+
+      if (host.includes('view.officeapps.live.com')) {
+        return rawUrl.replace('/op/view.aspx', '/op/embed.aspx');
+      }
+
+      if (host.includes('1drv.ms')) {
+        return null;
+      }
+
+      return rawUrl;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function toggleDevMode() {
+    const devAccess = localStorage.getItem('devAccess');
+    
+    if (devAccess === 'granted') {
+      // Entwickler-Modus deaktivieren
+      if (confirm('Entwickler-Modus deaktivieren?')) {
+        localStorage.removeItem('devAccess');
+        window.location.href = 'index.html';
+      }
+    } else {
+      // Passwort abfragen
+      const password = prompt('🔒 Entwickler-Zugang\n\nBitte Passwort eingeben:', '');
+      
+      if (password === null) {
+        return; // Abgebrochen
+      }
+      
+      if (password === '123') {
+        localStorage.setItem('devAccess', 'granted');
+        location.reload();
+      } else {
+        alert('❌ Falsches Passwort!\n\nZugriff verweigert.');
+      }
+    }
+  }
+
+  function initDevMode() {
+    const devAccess = localStorage.getItem('devAccess');
+    const btn = document.getElementById('devModeBtn');
+    const btnText = document.getElementById('devModeText');
+    
+    // Wenn kein Zugang, zu index.html weiterleiten
+    if (devAccess !== 'granted') {
+      window.location.href = 'index.html';
+      return;
+    }
+    
+    // Entwickler-Modus ist aktiv
+    if (btn) {
+      btn.style.background = '#28a745';
+      btn.style.borderColor = '#28a745';
+    }
+    if (btnText) {
+      btnText.textContent = '✅ Entwickler-Modus';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initDarkMode();
+    init();
+    initDevMode();
+  });
+</script>
+
+</body>
+</html>
