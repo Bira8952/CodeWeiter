@@ -4066,8 +4066,12 @@
         return parts;
       });
       
-      // Finde die Datumsspalte für das ausgewählte Datum
-      const dateRow = lines[3] || [];
+      // Finde die Datumszeile (Zeile 4 = Index 3)
+      // Zeile 1: Leer
+      // Zeile 2: Wochenangaben (41 / 2025, etc.)
+      // Zeile 3: Wochentage (Mo, Di, Mi, etc.)
+      // Zeile 4: Datumsangaben (06.10., 07.10., 30.10., etc.) <- Diese suchen wir!
+      const dateRow = lines[3] || [];  // Index 3 = 4. Zeile
       let targetCol = -1;
       
       const dateParts = datum.match(/(\d{4})-(\d{2})-(\d{2})/);
@@ -4095,29 +4099,44 @@
       let countSpat = 0;
       let countRotation = 0;
       
-      for (let row = 5; row < lines.length; row++) {
+      // Hilfsfunktion zum Normalisieren von Schicht-Codes
+      function normalizeShiftCode(code) {
+        if (!code) return '';
+        // Entferne Zahlen am Anfang, Trimme, und konvertiere zu Uppercase
+        let normalized = code.toString().trim().replace(/^\d+\s*/, '').toUpperCase();
+        // Entferne Akzente: Ä->A, Ö->O, Ü->U
+        normalized = normalized.replace(/Ä/g, 'A').replace(/Ö/g, 'O').replace(/Ü/g, 'U');
+        return normalized;
+      }
+      
+      for (let row = 4; row < lines.length; row++) {  // Ab Zeile 5 (Index 4)
         const zeile = lines[row];
         const mitarbeiter = zeile[0]?.toString().trim();
         
         if (!mitarbeiter || mitarbeiter.length === 0) continue;
         
-        let schichtCode = zeile[targetCol]?.toString().trim().toUpperCase() || '';
+        let schichtCode = normalizeShiftCode(zeile[targetCol]);
         
         if (!schichtCode || schichtCode === '-' || schichtCode === '') continue;
         
-        schichtCode = schichtCode.replace(/^\d+\s*/, '');
-        
+        // Filter out Abwesenheitscodes
         if (schichtCode === 'FT' || schichtCode === 'A' || schichtCode === 'U' || 
-            schichtCode === 'K' || schichtCode === 'URD' || schichtCode === 'KA') continue;
+            schichtCode === 'K' || schichtCode === 'URD' || schichtCode === 'KA' ||
+            schichtCode === 'HTVO' || schichtCode === 'TLM') continue;
         
-        if (schichtCode === 'FRÜH' || schichtCode === 'FRUEH' || 
-            schichtCode.startsWith('FRÜH') || schichtCode.startsWith('FRUEH')) {
+        // Zähle FRÜH (F, FRÜH, FRUEH)
+        if (schichtCode === 'F' || schichtCode === 'FRUH' || schichtCode === 'FRUEH' || 
+            schichtCode.startsWith('FRUH') || schichtCode.startsWith('FRUEH')) {
           countFrueh++;
-        } else if (schichtCode === 'SPÄT' || schichtCode === 'SPAT' || 
-                   schichtCode.startsWith('SPÄT') || schichtCode.startsWith('SPAT')) {
+        }
+        // Zähle SPÄT (SPAT, SPÄT, S)
+        else if (schichtCode === 'SPAT' || schichtCode === 'SPÄT' || 
+                 schichtCode.startsWith('SPAT')) {
           countSpat++;
-        } else if (schichtCode === 'ROTATION' || schichtCode.startsWith('ROTATION') || 
-                   schichtCode === 'ROT') {
+        }
+        // Zähle ROTATION (ROT, ROTATION)
+        else if (schichtCode === 'ROTATION' || schichtCode.startsWith('ROTATION') || 
+                 schichtCode === 'ROT') {
           countRotation++;
         }
       }
