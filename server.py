@@ -7,6 +7,7 @@ import requests
 import subprocess
 import json
 from io import StringIO
+import time
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
@@ -17,16 +18,46 @@ LIVEVOL_SHEET_GID = "0"  # Erster Tab für Live-Vol Daten
 POOLS_CONFIG_SHEET_GID = "0"  # Pool-Konfiguration Tab (NAME, START, DEADLINE, FAKTOR, RATE, ROTATION)
 MITARBEITER_SHEET_ID = "15yfflPhE6Lqykm8aqacnZcrJj0x0Y1Yd"  # Mitarbeiter-Daten Google Sheet
 
-def fetch_google_sheet_csv(sheet_id, gid="0"):
-    """Lädt Google Sheet als CSV"""
+def fetch_google_sheet_csv(sheet_id, gid="0", max_retries=3):
+    """Lädt Google Sheet als CSV mit Retry-Logik"""
     url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        return response.text
-    except Exception as e:
-        print(f"Fehler beim Laden von Google Sheets: {e}")
-        return None
+    
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=15)
+            response.raise_for_status()
+            return response.text
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 400:
+                print(f"❌ Google Sheet nicht öffentlich zugänglich (400 Bad Request)")
+                print(f"   URL: {url}")
+                print(f"   Bitte Sheet öffentlich teilen (Lesezugriff)")
+                return None
+            elif e.response.status_code == 429:
+                # Rate Limit erreicht
+                wait_time = (2 ** attempt) * 0.5  # Exponential backoff: 0.5s, 1s, 2s
+                print(f"⚠️ Rate Limit erreicht, warte {wait_time}s (Versuch {attempt + 1}/{max_retries})")
+                time.sleep(wait_time)
+                continue
+            else:
+                print(f"❌ HTTP Error {e.response.status_code}: {e}")
+                return None
+        except requests.exceptions.Timeout:
+            wait_time = (2 ** attempt) * 0.5
+            print(f"⚠️ Timeout, wiederhole in {wait_time}s (Versuch {attempt + 1}/{max_retries})")
+            time.sleep(wait_time)
+            continue
+        except Exception as e:
+            print(f"❌ Fehler beim Laden von Google Sheets: {e}")
+            if attempt < max_retries - 1:
+                wait_time = (2 ** attempt) * 0.5
+                print(f"   Wiederhole in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                return None
+    
+    print(f"❌ Alle {max_retries} Versuche fehlgeschlagen")
+    return None
 
 def get_default_pools():
     """Gibt Standard-Pools zurück (Fallback wenn Google Sheets nicht erreichbar)"""
@@ -72,12 +103,15 @@ def parse_pools_from_csv(csv_text):
         reader = csv.reader(csv_file)
         rows = list(reader)
         
+        print(f"📋 CSV hat {len(rows)} Zeilen (inkl. Header)")
+        
         if len(rows) < 2:
             print("⚠️ Zu wenige Zeilen in CSV, verwende Standard-Pools")
             return get_default_pools()
         
         # Erste Zeile ist Header
         header = [col.strip().upper() for col in rows[0]]
+        print(f"📊 CSV Header: {header}")
         
         # Finde Spalten-Indizes
         try:
@@ -89,37 +123,46 @@ def parse_pools_from_csv(csv_text):
             rotation_idx = header.index('ROTATION')
         except ValueError as e:
             print(f"⚠️ Fehlende Spalte in CSV: {e}, verwende Standard-Pools")
+            print(f"   Gefundene Spalten: {header}")
             return get_default_pools()
         
-        # Parse Pool-Daten
+        # Parse Pool-Daten (START bei rows[1] für erste Datenzeile)
         for i, row in enumerate(rows[1:], start=2):
+            # Skip komplett leere Zeilen
+            if not any(cell.strip() for cell in row):
+                print(f"⚠️ Zeile {i}: Komplett leer, überspringe")
+                continue
+                
             if len(row) < max(name_idx, start_idx, deadline_idx, factor_idx, rate_idx, rotation_idx) + 1:
-                print(f"⚠️ Zeile {i} hat zu wenige Spalten, überspringe")
+                print(f"⚠️ Zeile {i} hat zu wenige Spalten ({len(row)}), überspringe: {row}")
                 continue
             
             try:
+                name_value = row[name_idx].strip()
+                
+                # Skip Zeilen mit leerem Namen
+                if not name_value:
+                    print(f"⚠️ Zeile {i}: Name ist leer, überspringe")
+                    continue
+                
                 rotation_value = row[rotation_idx].strip().upper()
                 use_rotation = rotation_value == 'JA'
                 
                 pool = {
-                    "name": row[name_idx].strip(),
-                    "start": row[start_idx].strip(),
-                    "deadline": row[deadline_idx].strip(),
+                    "name": name_value,
+                    "start": row[start_idx].strip() or "06:00",
+                    "deadline": row[deadline_idx].strip() or "17:00",
                     "factor": float(row[factor_idx].strip()) if row[factor_idx].strip() else 1,
                     "rate": int(row[rate_idx].strip()) if row[rate_idx].strip() else 80,
                     "useRotation": use_rotation
                 }
                 
-                # Validierung
-                if not pool["name"]:
-                    print(f"⚠️ Zeile {i}: Name ist leer, überspringe")
-                    continue
-                
                 pools.append(pool)
                 print(f"✓ Pool geladen: {pool['name']} (START: {pool['start']}, DEADLINE: {pool['deadline']}, ROTATION: {rotation_value})")
                 
             except (ValueError, IndexError) as e:
-                print(f"⚠️ Fehler beim Parsen von Zeile {i}: {e}, überspringe")
+                print(f"⚠️ Fehler beim Parsen von Zeile {i}: {e}")
+                print(f"   Zeile Inhalt: {row}")
                 continue
         
         if pools:
@@ -131,6 +174,8 @@ def parse_pools_from_csv(csv_text):
             
     except Exception as e:
         print(f"❌ Fehler beim Parsen des CSV: {e}, verwende Standard-Pools")
+        import traceback
+        traceback.print_exc()
         return get_default_pools()
 
 @app.route('/')

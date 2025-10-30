@@ -3309,7 +3309,7 @@
   let pools = loadPools();
   
   // Auto-Refresh Konfiguration - LIVE!
-  const AUTO_REFRESH_SECONDS = 1; // Jede Sekunde automatisch Google Sheets abfragen - LIVE!
+  const AUTO_REFRESH_SECONDS = 3; // Alle 3 Sekunden automatisch Google Sheets abfragen - stabiler!
   let autoRefreshEnabled = false;
   let autoRefreshInterval = null;
 
@@ -3740,11 +3740,11 @@
     
     // SOFORT ersten Import machen
     importPoolDataSilent().then(() => {
-      // Danach Auto-Refresh starten (alle 1 Sekunde)
+      // Danach Auto-Refresh starten (alle 3 Sekunden)
       startAutoRefresh();
-      console.log('🔴 LIVE-Modus aktiviert - Live-Vol wird jede Sekunde von Google Sheets geladen!');
+      console.log('🔴 LIVE-Modus aktiviert - Live-Vol wird alle 3 Sekunden von Google Sheets geladen!');
       
-      // Mitarbeiter Auto-Refresh starten (alle 2 Sekunden)
+      // Mitarbeiter Auto-Refresh starten (alle 5 Sekunden)
       startMitarbeiterAutoRefresh();
       
       // Pool-Konfiguration: KEIN Auto-Refresh! Änderungen werden aus Web ins Google Sheet geschrieben
@@ -3796,7 +3796,7 @@
     
     if (statusEl) {
       if (autoRefreshEnabled) {
-        statusEl.innerHTML = `<span style="color: #29c46d; font-weight: 600;">🔴 LIVE - Aktualisierung jede Sekunde!</span>`;
+        statusEl.innerHTML = `<span style="color: #29c46d; font-weight: 600;">🔴 LIVE - Aktualisierung alle 3 Sekunden!</span>`;
       } else {
         statusEl.innerHTML = `<span style="color: #ef476f;">○ LIVE pausiert</span>`;
       }
@@ -3958,9 +3958,40 @@
       
     } catch (error) {
       if (loadingOverlay) loadingOverlay.remove();
+      
+      // Detaillierte Fehlermeldung
+      let errorMessage = 'Fehler beim Laden der Pool-Daten';
+      if (error.message) {
+        errorMessage += ': ' + error.message;
+      }
+      if (error.name) {
+        errorMessage += ' (' + error.name + ')';
+      }
+      
       console.error('Fehler beim Laden der Pool-Daten:', error);
+      console.error('  Error Details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
+      
       if (showMessages) {
-        await customAlert('Fehler beim Laden der Google Sheets Daten. Bitte überprüfen Sie die URL und ob das Sheet öffentlich geteilt ist.', 'Fehler', 'error');
+        let userMessage = 'Fehler beim Laden der Google Sheets Daten.\n\n';
+        
+        if (error.message && error.message.includes('CORS')) {
+          userMessage += 'CORS-Problem: Das Sheet ist möglicherweise nicht öffentlich zugänglich.\n\n';
+        } else if (error.message && error.message.includes('Failed to fetch')) {
+          userMessage += 'Netzwerkproblem: Bitte Internetverbindung prüfen.\n\n';
+        } else if (error.message) {
+          userMessage += 'Fehler: ' + error.message + '\n\n';
+        }
+        
+        userMessage += 'Bitte überprüfen Sie:\n';
+        userMessage += '• Ist das Google Sheet öffentlich geteilt (Lesezugriff)?\n';
+        userMessage += '• Ist die Internet-Verbindung stabil?\n';
+        userMessage += '• Ist die Sheet-URL korrekt?';
+        
+        await customAlert(userMessage, 'Fehler', 'error');
       }
       return false;
     }
@@ -4167,9 +4198,9 @@
     // Dann alle 2 Sekunden
     mitarbeiterAutoRefreshInterval = setInterval(() => {
       doImportMitarbeiterData();
-    }, 2000);
+    }, 5000);
     
-    console.log('🔄 Mitarbeiter Auto-Refresh gestartet (alle 2 Sek)');
+    console.log('🔄 Mitarbeiter Auto-Refresh gestartet (alle 5 Sek)');
   }
   
   // ========== END MITARBEITER AUTO-IMPORT SYSTEM ==========
