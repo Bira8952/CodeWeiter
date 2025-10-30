@@ -52,7 +52,7 @@ async function writePoolsToSheet(spreadsheetId, pools) {
     const sheets = await getGoogleSheetClient();
     
     // Erstelle Header-Zeile
-    const headerRow = ['NAME', 'START', 'DEADLINE', 'FAKTOR', 'RATE', 'SCHICHT'];
+    const headerRow = ['NAME', 'START', 'DEADLINE', 'FAKTOR', 'RATE', 'ROTATION'];
     
     // Erstelle Daten-Zeilen
     const dataRows = pools.map(pool => [
@@ -61,7 +61,7 @@ async function writePoolsToSheet(spreadsheetId, pools) {
       pool.deadline || '',
       pool.factor || 1,
       pool.rate || 80,
-      pool.schicht || 'FRÜH'
+      pool.useRotation ? 'JA' : 'NEIN'
     ]);
     
     // Kombiniere Header und Daten
