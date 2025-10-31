@@ -247,7 +247,7 @@ def save_pools_to_sheets():
         print(f"❌ Fehler beim Speichern ins Google Sheet: {e}")
         return jsonify({"error": str(e)}), 500
 
-# In-Memory Speicher für Mitarbeiter-Daten (Key: Datum, Value: {maFrueh, maSpat, maRotation})
+# In-Memory Speicher für Mitarbeiter-Daten (Key: Datum, Value: {maFrueh, maSpat, maTäti})
 mitarbeiter_cache = {}
 
 @app.route('/api/mitarbeiter/<date>', methods=['GET'])
@@ -257,7 +257,7 @@ def get_mitarbeiter(date):
         # Prüfe zuerst den Cache (Live-Daten aus seite3.html)
         if date in mitarbeiter_cache:
             data = mitarbeiter_cache[date]
-            print(f"✅ Mitarbeiter für {date} aus Cache: FRÜH={data['maFrueh']}, SPÄT={data['maSpat']}, ROTATION={data['maRotation']}")
+            print(f"✅ Mitarbeiter für {date} aus Cache: FRÜH={data['maFrueh']}, SPÄT={data['maSpat']}, Täti={data['maTäti']}")
             return jsonify(data)
         
         # Fallback: Versuche aus Google Sheets zu laden
@@ -267,7 +267,7 @@ def get_mitarbeiter(date):
         
         if not csv_text:
             print("⚠️ Mitarbeiter-Sheet nicht erreichbar, verwende 0/0/0")
-            return jsonify({"maFrueh": 0, "maSpat": 0, "maRotation": 0})
+            return jsonify({"maFrueh": 0, "maSpat": 0, "maTäti": 0})
         
         # Parse CSV
         csv_file = StringIO(csv_text)
@@ -276,7 +276,7 @@ def get_mitarbeiter(date):
         
         if len(lines) < 6:
             print("⚠️ Mitarbeiter-Sheet hat zu wenige Zeilen")
-            return jsonify({"maFrueh": 0, "maSpat": 0, "maRotation": 0})
+            return jsonify({"maFrueh": 0, "maSpat": 0, "maTäti": 0})
         
         # Finde die Spalte für das Datum
         date_parts = date.split('-')
@@ -286,7 +286,7 @@ def get_mitarbeiter(date):
             search_date = f"{day}.{month}."
         else:
             print(f"⚠️ Ungültiges Datumsformat: {date}")
-            return jsonify({"maFrueh": 0, "maSpat": 0, "maRotation": 0})
+            return jsonify({"maFrueh": 0, "maSpat": 0, "maTäti": 0})
         
         date_row = lines[3] if len(lines) > 3 else []
         col_index = -1
@@ -298,12 +298,12 @@ def get_mitarbeiter(date):
         
         if col_index == -1:
             print(f"⚠️ Datum {search_date} nicht im Sheet gefunden")
-            return jsonify({"maFrueh": 0, "maSpat": 0, "maRotation": 0})
+            return jsonify({"maFrueh": 0, "maSpat": 0, "maTäti": 0})
         
         # Zähle Schichten
         count_frueh = 0
         count_spat = 0
-        count_rotation = 0
+        count_täti = 0
         
         for row_idx in range(4, len(lines)):
             row = lines[row_idx]
@@ -328,20 +328,20 @@ def get_mitarbeiter(date):
                 count_frueh += 1
             elif 'SPÄT' in schicht_code or 'SPAT' in schicht_code:
                 count_spat += 1
-            elif 'ROTATION' in schicht_code or schicht_code == 'ROT':
-                count_rotation += 1
+            elif 'TÄTI' in schicht_code or schicht_code == 'ROT':
+                count_täti += 1
         
-        print(f"✅ Mitarbeiter für {date}: FRÜH={count_frueh}, SPÄT={count_spat}, ROTATION={count_rotation}")
+        print(f"✅ Mitarbeiter für {date}: FRÜH={count_frueh}, SPÄT={count_spat}, Täti={count_täti}")
         
         return jsonify({
             "maFrueh": count_frueh,
             "maSpat": count_spat,
-            "maRotation": count_rotation
+            "maTäti": count_täti
         })
         
     except Exception as e:
         print(f"❌ Fehler beim Laden der Mitarbeiter-Daten: {e}")
-        return jsonify({"maFrueh": 0, "maSpat": 0, "maRotation": 0})
+        return jsonify({"maFrueh": 0, "maSpat": 0, "maTäti": 0})
 
 @app.route('/api/mitarbeiter/save', methods=['POST'])
 def save_mitarbeiter():
@@ -355,16 +355,16 @@ def save_mitarbeiter():
         date = data.get('date') or data.get('datum')
         ma_frueh = data.get('maFrueh', 0)
         ma_spat = data.get('maSpat', 0)
-        ma_rotation = data.get('maRotation', 0)
+        ma_täti = data.get('maTäti', 0)
         
         # Speichere im Cache (wird von /api/mitarbeiter/<date> gelesen)
         mitarbeiter_cache[date] = {
             "maFrueh": ma_frueh,
             "maSpat": ma_spat,
-            "maRotation": ma_rotation
+            "maTäti": ma_täti
         }
         
-        print(f"💾 Mitarbeiter gespeichert für {date}: FRÜH={ma_frueh}, SPÄT={ma_spat}, ROTATION={ma_rotation}")
+        print(f"💾 Mitarbeiter gespeichert für {date}: FRÜH={ma_frueh}, SPÄT={ma_spat}, Täti={ma_täti}")
         
         return jsonify({"success": True})
         
