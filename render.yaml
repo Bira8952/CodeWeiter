@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: einsatzplanung
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind=0.0.0.0:$PORT --workers=2 server:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: LIVE_VOL_SHEET_ID
+        sync: false
+      - key: POOL_CONFIG_SHEET_ID
+        sync: false
+      - key: MITARBEITER_SHEET_ID
+        sync: false

@@ -1,0 +1,104 @@
+═══════════════════════════════════════════════════════════
+  100% FUNKTIONIERENDE RENDER.COM ANLEITUNG
+═══════════════════════════════════════════════════════════
+
+WICHTIG: Zuerst Code auf GitHub hochladen!
+         (Siehe: GITHUB_PUSH_ANLEITUNG.txt)
+
+───────────────────────────────────────────────────────────
+SCHRITT 1: Render.com Account erstellen
+───────────────────────────────────────────────────────────
+
+1. Gehe zu: https://render.com
+2. Klicke "Get Started for Free"
+3. Wähle "Sign up with GitHub"
+4. Erlaube Render den Zugriff auf deine Repositories
+
+✅ Account erstellt!
+
+───────────────────────────────────────────────────────────
+SCHRITT 2: Web Service erstellen
+───────────────────────────────────────────────────────────
+
+1. Im Render Dashboard → Klicke "New +" (oben rechts)
+2. Wähle "Web Service"
+3. Finde dein Repository: "CodeWeiter"
+4. Klicke "Connect"
+
+───────────────────────────────────────────────────────────
+SCHRITT 3: Konfiguration (GENAU SO EINGEBEN!)
+───────────────────────────────────────────────────────────
+
+Name:
+    einsatzplanung
+
+Region:
+    Frankfurt (EU Central)
+
+Branch:
+    main
+
+Runtime:
+    Python 3
+
+Build Command:
+    pip install -r requirements.txt
+
+Start Command:
+    gunicorn --bind=0.0.0.0:$PORT --workers=2 server:app
+
+Instance Type:
+    Free  ← WICHTIG: FREE wählen!
+
+───────────────────────────────────────────────────────────
+SCHRITT 4: Environment Variables (Secrets)
+───────────────────────────────────────────────────────────
+
+Scrolle runter zu "Environment Variables"
+Klicke 3x auf "Add Environment Variable"
+
+Variable 1:
+    Key:   LIVE_VOL_SHEET_ID
+    Value: 1EhhG5Da2kDpLMktcrSdn1DTMnr_XLEdJyNUI2ZwLuQ4
+
+Variable 2:
+    Key:   POOL_CONFIG_SHEET_ID
+    Value: 14e85oqQrUjywXjNasJz7azME0t18RJEEldgRwCRFiH4
+
+Variable 3:
+    Key:   MITARBEITER_SHEET_ID
+    Value: 15yfflPhE6Lqykm8aqacnZcrJj0x0Y1Yd
+
+───────────────────────────────────────────────────────────
+SCHRITT 5: Deploy!
+───────────────────────────────────────────────────────────
+
+1. Scrolle ganz nach unten
+2. Klicke "Create Web Service"
+3. Warte 2-3 Minuten
+4. ✅ FERTIG!
+
+───────────────────────────────────────────────────────────
+DEINE APP IST JETZT LIVE!
+───────────────────────────────────────────────────────────
+
+URL wird etwa so aussehen:
+https://einsatzplanung.onrender.com
+
+Diese URL kannst du mit jedem teilen!
+
+───────────────────────────────────────────────────────────
+WICHTIG: Bei Fehlern
+───────────────────────────────────────────────────────────
+
+Falls der Deploy fehlschlägt:
+1. Klicke auf "Logs" in Render
+2. Suche nach der Fehlermeldung
+3. Häufigster Fehler: "requirements.txt not found"
+   → Lösung: Code nochmal auf GitHub pushen!
+
+═══════════════════════════════════════════════════════════
+
+KOSTEN: $0 / Monat (100% KOSTENLOS!)
+
+═══════════════════════════════════════════════════════════

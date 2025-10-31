@@ -14,6 +14,7 @@ Thumbs.db
 # Logs
 *.log
 /tmp/
+logs/
 
 # Secrets und Umgebungsvariablen
 .env
@@ -32,11 +33,17 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+.cache/
+.local/
+.pythonlibs/
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
 
-# Node modules (falls später benötigt)
+# Node modules
 node_modules/
+
+# Git
+.git/
