@@ -1,0 +1,15 @@
+{
+  "name": "einsatzplanung-nintendo",
+  "version": "1.0.0",
+  "description": "Nintendo-Style Work Scheduling Application",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "googleapis": "^134.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
