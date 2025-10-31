@@ -30,7 +30,7 @@ cd DEIN-REPO
 
 ### 2. Python-Pakete installieren
 ```bash
-pip install flask flask-cors psycopg2-binary requests
+pip install -r requirements.txt
 ```
 
 ### 3. Google Sheets IDs konfigurieren (Optional)
