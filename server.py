@@ -18,9 +18,14 @@ CORS(app)
 # Database connection
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+if not DATABASE_URL:
+    print("⚠️ WARNING: DATABASE_URL not set - database features will be disabled")
+
 @contextmanager
 def get_db_connection():
     """Context manager for database connections"""
+    if not DATABASE_URL:
+        raise ValueError("DATABASE_URL environment variable not set")
     conn = psycopg2.connect(DATABASE_URL)
     try:
         yield conn
@@ -242,17 +247,36 @@ def get_pools():
 @app.route('/api/pools/save', methods=['POST'])
 @app.route('/api/pools/save-to-sheets', methods=['POST'])  # Backward compatibility
 def save_pools():
-    """Speichert Pool-Konfiguration in PostgreSQL Datenbank"""
+    """Speichert Pool-Konfiguration in PostgreSQL Datenbank (ersetzt alle Pools)"""
     try:
         pools = request.get_json()
         
         if not pools or not isinstance(pools, list):
             return jsonify({"error": "Ungültige Pool-Daten"}), 400
         
-        print(f"📝 Speichere {len(pools)} Pools in Datenbank...")
+        print(f"📝 Speichere {len(pools)} Pools in Datenbank (ersetzt alle)...")
         
         with get_db_connection() as conn:
             with conn.cursor() as cur:
+                # Sammle Pool-Namen aus der submitted Liste
+                pool_names = [pool.get('name') for pool in pools if pool.get('name')]
+                
+                # Lösche alle Pools, die NICHT in der submitted Liste sind
+                if pool_names:
+                    placeholders = ','.join(['%s'] * len(pool_names))
+                    cur.execute(f"""
+                        DELETE FROM pools 
+                        WHERE name NOT IN ({placeholders})
+                    """, pool_names)
+                    deleted_count = cur.rowcount
+                    if deleted_count > 0:
+                        print(f"🗑️ {deleted_count} Pools aus Datenbank gelöscht (nicht mehr in Liste)")
+                else:
+                    # Wenn keine Pools submitted, lösche alle
+                    cur.execute("DELETE FROM pools")
+                    print("🗑️ Alle Pools aus Datenbank gelöscht")
+                
+                # Füge/Update alle submitted Pools
                 for pool in pools:
                     # UPDATE oder INSERT (UPSERT)
                     cur.execute("""
@@ -278,6 +302,9 @@ def save_pools():
         print(f"✅ {len(pools)} Pools erfolgreich in Datenbank gespeichert")
         return jsonify({"success": True, "message": "Pools in Datenbank gespeichert"})
             
+    except ValueError as ve:
+        print(f"❌ Konfigurationsfehler: {ve}")
+        return jsonify({"error": "DATABASE_URL nicht konfiguriert"}), 500
     except Exception as e:
         print(f"❌ Fehler beim Speichern in Datenbank: {e}")
         import traceback
