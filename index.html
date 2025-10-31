@@ -2109,7 +2109,15 @@
             <thead class="einsatzplan-header">
               <tr>
                 <th>SCHICHT (EDITIERBAR)</th>
-                <th style="text-align: center;">MA</th>
+                <th style="text-align: center;">
+                  MA
+                  <button id="toggleMaMode" onclick="toggleManualInputMode()" 
+                          style="margin-left: 10px; padding: 4px 10px; border-radius: 4px; border: none; 
+                                 background: #27ae60; color: white; font-size: 11px; font-weight: 600; 
+                                 cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    🔄 AUTO
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -3746,10 +3754,46 @@
   // Flag für manuelle Eingabe
   let manualInputActive = false;
   
+  // Toggle zwischen Auto und Manuell
+  window.toggleManualInputMode = function() {
+    manualInputActive = !manualInputActive;
+    const button = document.getElementById('toggleMaMode');
+    const maInputs = document.querySelectorAll('.ma-input');
+    
+    if (manualInputActive) {
+      // MANUELL-Modus
+      button.textContent = '✏️ MANUELL';
+      button.style.background = '#e74c3c';
+      maInputs.forEach(input => {
+        input.readOnly = false;
+        input.style.cursor = 'text';
+        input.style.background = '#fff3cd';
+      });
+      console.log('✏️ MANUELL-Modus aktiviert - Auto-Import pausiert');
+    } else {
+      // AUTO-Modus
+      button.textContent = '🔄 AUTO';
+      button.style.background = '#27ae60';
+      maInputs.forEach(input => {
+        const devAccess = localStorage.getItem('devAccess');
+        if (devAccess !== 'granted') {
+          input.readOnly = true;
+          input.style.cursor = 'not-allowed';
+        }
+        input.style.background = '#e8f4f8';
+      });
+      // Sofort neuen Import machen
+      if (typeof doImportMitarbeiterData === 'function') {
+        doImportMitarbeiterData();
+      }
+      console.log('🔄 AUTO-Modus aktiviert - Auto-Import läuft wieder');
+    }
+  };
+  
   // Event Listeners für manuelle Mitarbeiter-Eingabe
   const maFruehInput = document.getElementById('maFrueh');
   const maSpatInput = document.getElementById('maSpat');
-  const maRotationInput = document.getElementById('maRotation');
+  const maTätiInput = document.getElementById('maTäti');
   
   // Speichern bei Änderung (change) oder Enter-Taste
   const handleMitarbeiterChange = () => {
@@ -3775,10 +3819,10 @@
     });
   }
   
-  if (maRotationInput) {
-    maRotationInput.addEventListener('input', () => { manualInputActive = true; });
-    maRotationInput.addEventListener('change', handleMitarbeiterChange);
-    maRotationInput.addEventListener('keypress', (e) => {
+  if (maTätiInput) {
+    maTätiInput.addEventListener('input', () => { manualInputActive = true; });
+    maTätiInput.addEventListener('change', handleMitarbeiterChange);
+    maTätiInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleMitarbeiterChange();
     });
   }
