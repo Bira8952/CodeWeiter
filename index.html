@@ -4221,8 +4221,8 @@
                  schichtCode.startsWith('SPAT')) {
           countSpat++;
         }
-        // Zähle Täti (ROT, Täti)
-        else if (schichtCode === 'Täti' || schichtCode.startsWith('Täti') || 
+        // Zähle Täti (ROT, TATI - Ä wurde zu A normalisiert!)
+        else if (schichtCode === 'TATI' || schichtCode.startsWith('TATI') || 
                  schichtCode === 'ROT') {
           countTäti++;
         }
