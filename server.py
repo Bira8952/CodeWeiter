@@ -12,11 +12,12 @@ import time
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-# Google Sheets Config
-GOOGLE_SHEETS_ID = "14e85oqQrUjywXjNasJz7azME0t18RJEEldgRwCRFiH4"
+# Google Sheets Config - Aus Umgebungsvariablen laden (sicher für GitHub!)
+GOOGLE_SHEETS_ID = os.getenv("POOL_CONFIG_SHEET_ID", "14e85oqQrUjywXjNasJz7azME0t18RJEEldgRwCRFiH4")
+LIVE_VOL_SHEET_ID = os.getenv("LIVE_VOL_SHEET_ID", "1EhhG5Da2kDpLMktcrSdn1DTMnr_XLEdJyNUI2ZwLuQ4")
 LIVEVOL_SHEET_GID = "0"  # Erster Tab für Live-Vol Daten
-POOLS_CONFIG_SHEET_GID = "0"  # Pool-Konfiguration Tab (NAME, START, DEADLINE, FAKTOR, RATE, ROTATION)
-MITARBEITER_SHEET_ID = "15yfflPhE6Lqykm8aqacnZcrJj0x0Y1Yd"  # Mitarbeiter-Daten Google Sheet
+POOLS_CONFIG_SHEET_GID = "0"  # Pool-Konfiguration Tab
+MITARBEITER_SHEET_ID = os.getenv("MITARBEITER_SHEET_ID", "15yfflPhE6Lqykm8aqacnZcrJj0x0Y1Yd")
 
 def fetch_google_sheet_csv(sheet_id, gid="0", max_retries=3):
     """Lädt Google Sheet als CSV mit Retry-Logik"""
@@ -371,6 +372,16 @@ def save_mitarbeiter():
     except Exception as e:
         print(f"❌ Fehler beim Speichern der Mitarbeiter-Daten: {e}")
         return jsonify({"error": str(e)}), 500
+
+# API-Endpunkt für Google Sheets Config (sicher für Frontend!)
+@app.route('/api/config/sheets', methods=['GET'])
+def get_sheets_config():
+    """Liefert Google Sheets IDs sicher vom Backend"""
+    return jsonify({
+        "liveVolSheetId": LIVE_VOL_SHEET_ID,
+        "poolConfigSheetId": GOOGLE_SHEETS_ID,
+        "mitarbeiterSheetId": MITARBEITER_SHEET_ID
+    })
 
 # Pool-Daten werden aus Google Sheets gelesen
 # Änderungen aus dem Web werden ins Google Sheet geschrieben (Web → Google Sheet)

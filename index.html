@@ -3842,16 +3842,34 @@
     });
   }
   
-  // DIREKT von Google Sheets laden - URL ist fest eingebaut!
-  // Live-Vol Daten (altes Sheet - bleibt so wie es war)
-  const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/1EhhG5Da2kDpLMktcrSdn1DTMnr_XLEdJyNUI2ZwLuQ4/edit?usp=sharing';
+  // Google Sheets Config vom Backend laden (sicher für GitHub!)
+  let sheetsConfig = null;
+  let GOOGLE_SHEETS_URL = '';
+  
+  async function loadSheetsConfig() {
+    try {
+      const response = await fetch('/api/config/sheets');
+      if (response.ok) {
+        sheetsConfig = await response.json();
+        GOOGLE_SHEETS_URL = `https://docs.google.com/spreadsheets/d/${sheetsConfig.liveVolSheetId}/edit?usp=sharing`;
+        console.log('✅ Google Sheets Config vom Backend geladen');
+        return true;
+      }
+    } catch (error) {
+      console.error('❌ Fehler beim Laden der Sheets Config:', error);
+    }
+    return false;
+  }
   
   // Auto-Refresh AUTOMATISCH starten beim Laden der Seite!
-  setTimeout(() => {
+  setTimeout(async () => {
+    // Zuerst Config laden
+    await loadSheetsConfig();
+    
     const urlField = document.getElementById('poolSheetsUrl');
     
     // URL automatisch eintragen
-    if (urlField) {
+    if (urlField && GOOGLE_SHEETS_URL) {
       urlField.value = GOOGLE_SHEETS_URL;
       localStorage.setItem('poolSheetsUrl', GOOGLE_SHEETS_URL);
     }
@@ -4175,8 +4193,17 @@
   async function doImportMitarbeiterData() {
     const datum = getLocalDateString(new Date());
     
-    // Mitarbeiter-Google-Sheet URL (fest kodiert)
-    const MITARBEITER_SHEET_ID = '15yfflPhE6Lqykm8aqacnZcrJj0x0Y1Yd';
+    // Mitarbeiter-Google-Sheet ID vom Backend holen (sicher für GitHub!)
+    if (!sheetsConfig) {
+      await loadSheetsConfig();
+    }
+    
+    if (!sheetsConfig || !sheetsConfig.mitarbeiterSheetId) {
+      console.log('ℹ️ Keine Mitarbeiter-Sheets URL konfiguriert');
+      return false;
+    }
+    
+    const MITARBEITER_SHEET_ID = sheetsConfig.mitarbeiterSheetId;
     const excelUrl = `https://docs.google.com/spreadsheets/d/${MITARBEITER_SHEET_ID}/edit`;
     
     if (!excelUrl) {
