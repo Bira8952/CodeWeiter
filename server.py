@@ -8,9 +8,28 @@ import subprocess
 import json
 from io import StringIO
 import time
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from contextlib import contextmanager
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
+
+# Database connection
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+@contextmanager
+def get_db_connection():
+    """Context manager for database connections"""
+    conn = psycopg2.connect(DATABASE_URL)
+    try:
+        yield conn
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
 
 # Google Sheets Config - Aus Umgebungsvariablen laden (sicher für GitHub!)
 GOOGLE_SHEETS_ID = os.getenv("POOL_CONFIG_SHEET_ID", "14e85oqQrUjywXjNasJz7azME0t18RJEEldgRwCRFiH4")
@@ -194,71 +213,94 @@ def serve_static(path):
 
 @app.route('/api/pools', methods=['GET'])
 def get_pools():
-    """Lädt Pool-Konfiguration aus Google Sheets (Tab 2)"""
+    """Lädt Pool-Konfiguration aus PostgreSQL Datenbank"""
     try:
-        print(f"📥 Lade Pool-Konfiguration aus Google Sheets (GID={POOLS_CONFIG_SHEET_GID})...")
+        print(f"📥 Lade Pool-Konfiguration aus Datenbank...")
         
-        # Lade CSV von Google Sheets (Tab 2 für Pool-Konfiguration)
-        csv_text = fetch_google_sheet_csv(GOOGLE_SHEETS_ID, POOLS_CONFIG_SHEET_GID)
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT name, start_time as start, deadline, factor, rate, use_rotation as "useRotation"
+                    FROM pools
+                    ORDER BY id
+                """)
+                pools = cur.fetchall()
         
-        # Parse Pools
-        pools = parse_pools_from_csv(csv_text)
+        # Konvertiere zu Liste von Dicts (für JSON)
+        pools_list = [dict(pool) for pool in pools]
         
-        print(f"✅ {len(pools)} Pools bereitgestellt")
-        return jsonify(pools)
+        print(f"✅ {len(pools_list)} Pools aus Datenbank geladen")
+        return jsonify(pools_list)
+        
     except Exception as e:
-        print(f"❌ Fehler beim Laden der Pools: {e}")
+        print(f"❌ Fehler beim Laden der Pools aus Datenbank: {e}")
+        import traceback
+        traceback.print_exc()
         # Fallback zu Standard-Pools
         return jsonify(get_default_pools())
 
-@app.route('/api/pools/save-to-sheets', methods=['POST'])
-def save_pools_to_sheets():
-    """Speichert Pool-Konfiguration ins Google Sheet (Web → Google Sheet)"""
+@app.route('/api/pools/save', methods=['POST'])
+@app.route('/api/pools/save-to-sheets', methods=['POST'])  # Backward compatibility
+def save_pools():
+    """Speichert Pool-Konfiguration in PostgreSQL Datenbank"""
     try:
         pools = request.get_json()
         
         if not pools or not isinstance(pools, list):
             return jsonify({"error": "Ungültige Pool-Daten"}), 400
         
-        print(f"📝 Speichere {len(pools)} Pools ins Google Sheet...")
+        print(f"📝 Speichere {len(pools)} Pools in Datenbank...")
         
-        # Konvertiere Pools zu JSON String
-        pools_json = json.dumps(pools)
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                for pool in pools:
+                    # UPDATE oder INSERT (UPSERT)
+                    cur.execute("""
+                        INSERT INTO pools (name, start_time, deadline, factor, rate, use_rotation, updated_at)
+                        VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                        ON CONFLICT (name) 
+                        DO UPDATE SET 
+                            start_time = EXCLUDED.start_time,
+                            deadline = EXCLUDED.deadline,
+                            factor = EXCLUDED.factor,
+                            rate = EXCLUDED.rate,
+                            use_rotation = EXCLUDED.use_rotation,
+                            updated_at = CURRENT_TIMESTAMP
+                    """, (
+                        pool.get('name'),
+                        pool.get('start'),
+                        pool.get('deadline'),
+                        pool.get('factor', 1.0),
+                        pool.get('rate', 80),
+                        pool.get('useRotation', False)
+                    ))
         
-        # Rufe Node.js Script auf
-        result = subprocess.run(
-            ['node', 'writeToGoogleSheets.js', pools_json],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        
-        if result.returncode == 0:
-            print("✅ Pools erfolgreich ins Google Sheet geschrieben")
-            print(result.stdout)
-            return jsonify({"success": True, "message": "Pools ins Google Sheet gespeichert"})
-        else:
-            print(f"❌ Fehler beim Schreiben ins Google Sheet: {result.stderr}")
-            return jsonify({"error": result.stderr}), 500
+        print(f"✅ {len(pools)} Pools erfolgreich in Datenbank gespeichert")
+        return jsonify({"success": True, "message": "Pools in Datenbank gespeichert"})
             
-    except subprocess.TimeoutExpired:
-        print("❌ Timeout beim Schreiben ins Google Sheet")
-        return jsonify({"error": "Timeout"}), 500
     except Exception as e:
-        print(f"❌ Fehler beim Speichern ins Google Sheet: {e}")
+        print(f"❌ Fehler beim Speichern in Datenbank: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-# In-Memory Speicher für Mitarbeiter-Daten (Key: Datum, Value: {maFrueh, maSpat, maTäti})
-mitarbeiter_cache = {}
 
 @app.route('/api/mitarbeiter/<date>', methods=['GET'])
 def get_mitarbeiter(date):
-    """Lädt Mitarbeiter-Daten für ein bestimmtes Datum"""
+    """Lädt Mitarbeiter-Daten für ein bestimmtes Datum aus PostgreSQL Datenbank"""
     try:
-        # Prüfe zuerst den Cache (Live-Daten aus seite3.html)
-        if date in mitarbeiter_cache:
-            data = mitarbeiter_cache[date]
-            print(f"✅ Mitarbeiter für {date} aus Cache: FRÜH={data['maFrueh']}, SPÄT={data['maSpat']}, Täti={data['maTäti']}")
+        # Prüfe zuerst die Datenbank
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT frueh as "maFrueh", spat as "maSpat", taeti as "maTäti"
+                    FROM mitarbeiter
+                    WHERE date = %s
+                """, (date,))
+                result = cur.fetchone()
+        
+        if result:
+            data = dict(result)
+            print(f"✅ Mitarbeiter für {date} aus Datenbank: FRÜH={data['maFrueh']}, SPÄT={data['maSpat']}, Täti={data['maTäti']}")
             return jsonify(data)
         
         # Fallback: Versuche aus Google Sheets zu laden
@@ -346,7 +388,7 @@ def get_mitarbeiter(date):
 
 @app.route('/api/mitarbeiter/save', methods=['POST'])
 def save_mitarbeiter():
-    """Speichert Mitarbeiter-Daten (wird von index.html aufgerufen)"""
+    """Speichert Mitarbeiter-Daten in PostgreSQL Datenbank"""
     try:
         data = request.get_json()
         
@@ -358,19 +400,28 @@ def save_mitarbeiter():
         ma_spat = data.get('maSpat', 0)
         ma_täti = data.get('maTäti', 0)
         
-        # Speichere im Cache (wird von /api/mitarbeiter/<date> gelesen)
-        mitarbeiter_cache[date] = {
-            "maFrueh": ma_frueh,
-            "maSpat": ma_spat,
-            "maTäti": ma_täti
-        }
+        # Speichere in Datenbank (UPSERT)
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO mitarbeiter (date, frueh, spat, taeti, updated_at)
+                    VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (date)
+                    DO UPDATE SET
+                        frueh = EXCLUDED.frueh,
+                        spat = EXCLUDED.spat,
+                        taeti = EXCLUDED.taeti,
+                        updated_at = CURRENT_TIMESTAMP
+                """, (date, ma_frueh, ma_spat, ma_täti))
         
-        print(f"💾 Mitarbeiter gespeichert für {date}: FRÜH={ma_frueh}, SPÄT={ma_spat}, Täti={ma_täti}")
+        print(f"💾 Mitarbeiter in DB gespeichert für {date}: FRÜH={ma_frueh}, SPÄT={ma_spat}, Täti={ma_täti}")
         
         return jsonify({"success": True})
         
     except Exception as e:
         print(f"❌ Fehler beim Speichern der Mitarbeiter-Daten: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 # API-Endpunkt für Google Sheets Config (sicher für Frontend!)
