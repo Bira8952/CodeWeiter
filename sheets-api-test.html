@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Sheets API Test - Einsatzplanung</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      border-radius: 12px;
+      padding: 20px 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      color: #2d3748;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 10px;
+    }
+
+    .nav-link {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .nav-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .sheets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .sheet-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+
+    .sheet-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    }
+
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .sheet-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-loading {
+      background: #fbbf24;
+      color: #78350f;
+    }
+
+    .status-success {
+      background: #10b981;
+      color: white;
+    }
+
+    .status-error {
+      background: #ef4444;
+      color: white;
+    }
+
+    .sheet-info {
+      margin-bottom: 15px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .info-label {
+      font-weight: 600;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .info-value {
+      font-weight: 500;
+      color: #2d3748;
+      font-size: 13px;
+      font-family: monospace;
+    }
+
+    .sheet-id {
+      font-size: 11px;
+      color: #9ca3af;
+      word-break: break-all;
+      margin-top: 5px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-test {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+    }
+
+    .btn-test:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-open {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+
+    .btn-open:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+
+    .data-preview {
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+      color: #374151;
+      border: 1px solid #e5e7eb;
+    }
+
+    .log-section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    }
+
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .log-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+
+    .btn-clear {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-clear:hover {
+      background: #dc2626;
+    }
+
+    .log-output {
+      background: #1f2937;
+      color: #f9fafb;
+      border-radius: 8px;
+      padding: 15px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .log-entry {
+      margin-bottom: 5px;
+    }
+
+    .log-success {
+      color: #10b981;
+    }
+
+    .log-error {
+      color: #ef4444;
+    }
+
+    .log-info {
+      color: #60a5fa;
+    }
+
+    .log-warning {
+      color: #fbbf24;
+    }
+
+    .refresh-all {
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
+
+    .refresh-all:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+      margin-left: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>
+        🔌 Google Sheets API Test
+      </h1>
+      <div class="nav-links">
+        <a href="/" class="nav-link">← Zurück zur Hauptseite</a>
+        <a href="/seite3.html" class="nav-link">Mitarbeiter</a>
+      </div>
+    </div>
+
+    <button class="refresh-all" onclick="testAllSheets()">
+      🔄 Alle Sheets testen
+    </button>
+
+    <div class="sheets-grid" id="sheetsGrid">
+      <div class="sheet-card">
+        <div class="sheet-header">
+          <div class="sheet-title">📊 Live-Vol Sheet</div>
+          <div class="status-badge status-loading" id="status-livevol">Lädt...</div>
+        </div>
+        <div class="sheet-info">
+          <div class="info-row">
+            <span class="info-label">Verwendung:</span>
+            <span class="info-value">Live Volume-Daten</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Update:</span>
+            <span class="info-value">Alle 3 Sekunden</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Status:</span>
+            <span class="info-value" id="livevol-status">Warte auf Test...</span>
+          </div>
+          <div class="sheet-id" id="livevol-id">Sheet ID wird geladen...</div>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-test" onclick="testSheet('livevol')">Test lesen</button>
+          <button class="btn btn-open" onclick="openSheet('livevol')" id="btn-open-livevol">Öffnen</button>
+        </div>
+        <div class="data-preview" id="preview-livevol">Noch keine Daten...</div>
+      </div>
+
+      <div class="sheet-card">
+        <div class="sheet-header">
+          <div class="sheet-title">⚙️ Pool-Konfiguration</div>
+          <div class="status-badge status-loading" id="status-pool">Lädt...</div>
+        </div>
+        <div class="sheet-info">
+          <div class="info-row">
+            <span class="info-label">Verwendung:</span>
+            <span class="info-value">Pool-Einstellungen</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Richtung:</span>
+            <span class="info-value">Web → Sheets</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Status:</span>
+            <span class="info-value" id="pool-status">Warte auf Test...</span>
+          </div>
+          <div class="sheet-id" id="pool-id">Sheet ID wird geladen...</div>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-test" onclick="testSheet('pool')">Test lesen</button>
+          <button class="btn btn-open" onclick="openSheet('pool')" id="btn-open-pool">Öffnen</button>
+        </div>
+        <div class="data-preview" id="preview-pool">Noch keine Daten...</div>
+      </div>
+
+      <div class="sheet-card">
+        <div class="sheet-header">
+          <div class="sheet-title">👥 Mitarbeiter-Daten</div>
+          <div class="status-badge status-loading" id="status-mitarbeiter">Lädt...</div>
+        </div>
+        <div class="sheet-info">
+          <div class="info-row">
+            <span class="info-label">Verwendung:</span>
+            <span class="info-value">Schicht-Zählung</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Update:</span>
+            <span class="info-value">Alle 5 Sekunden</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Status:</span>
+            <span class="info-value" id="mitarbeiter-status">Warte auf Test...</span>
+          </div>
+          <div class="sheet-id" id="mitarbeiter-id">Sheet ID wird geladen...</div>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-test" onclick="testSheet('mitarbeiter')">Test lesen</button>
+          <button class="btn btn-open" onclick="openSheet('mitarbeiter')" id="btn-open-mitarbeiter">Öffnen</button>
+        </div>
+        <div class="data-preview" id="preview-mitarbeiter">Noch keine Daten...</div>
+      </div>
+    </div>
+
+    <div class="log-section">
+      <div class="log-header">
+        <div class="log-title">📋 Test-Log</div>
+        <button class="btn-clear" onclick="clearLog()">Log löschen</button>
+      </div>
+      <div class="log-output" id="logOutput">
+        <div class="log-entry log-info">Bereit für Tests...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let sheetsConfig = null;
+
+    // Log-Funktion
+    function log(message, type = 'info') {
+      const logOutput = document.getElementById('logOutput');
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      entry.textContent = `[${timestamp}] ${message}`;
+      logOutput.appendChild(entry);
+      logOutput.scrollTop = logOutput.scrollHeight;
+    }
+
+    function clearLog() {
+      document.getElementById('logOutput').innerHTML = '<div class="log-entry log-info">Log gelöscht - Bereit für Tests...</div>';
+    }
+
+    // Lade Google Sheets Config vom Backend
+    async function loadSheetsConfig() {
+      try {
+        log('🔄 Lade Google Sheets Konfiguration vom Backend...', 'info');
+        const response = await fetch('/api/config/sheets');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        sheetsConfig = await response.json();
+        
+        // Zeige Sheet IDs an
+        document.getElementById('livevol-id').textContent = `ID: ${sheetsConfig.liveVolSheetId}`;
+        document.getElementById('pool-id').textContent = `ID: ${sheetsConfig.poolConfigSheetId}`;
+        document.getElementById('mitarbeiter-id').textContent = `ID: ${sheetsConfig.mitarbeiterSheetId}`;
+        
+        log('✅ Google Sheets Konfiguration erfolgreich geladen', 'success');
+        return true;
+      } catch (error) {
+        log(`❌ Fehler beim Laden der Konfiguration: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    // Sheet öffnen
+    function openSheet(type) {
+      if (!sheetsConfig) {
+        log('❌ Konfiguration nicht geladen!', 'error');
+        return;
+      }
+
+      let sheetId;
+      switch(type) {
+        case 'livevol':
+          sheetId = sheetsConfig.liveVolSheetId;
+          break;
+        case 'pool':
+          sheetId = sheetsConfig.poolConfigSheetId;
+          break;
+        case 'mitarbeiter':
+          sheetId = sheetsConfig.mitarbeiterSheetId;
+          break;
+      }
+
+      if (sheetId) {
+        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
+        window.open(url, '_blank');
+        log(`🔗 Sheet geöffnet: ${type}`, 'info');
+      }
+    }
+
+    // Test einzelnes Sheet
+    async function testSheet(type) {
+      if (!sheetsConfig) {
+        await loadSheetsConfig();
+      }
+
+      const statusBadge = document.getElementById(`status-${type}`);
+      const statusText = document.getElementById(`${type}-status`);
+      const preview = document.getElementById(`preview-${type}`);
+
+      statusBadge.className = 'status-badge status-loading';
+      statusBadge.textContent = 'Teste...';
+      statusText.textContent = 'Teste Verbindung...';
+
+      try {
+        let sheetId;
+        switch(type) {
+          case 'livevol':
+            sheetId = sheetsConfig.liveVolSheetId;
+            break;
+          case 'pool':
+            sheetId = sheetsConfig.poolConfigSheetId;
+            break;
+          case 'mitarbeiter':
+            sheetId = sheetsConfig.mitarbeiterSheetId;
+            break;
+        }
+
+        log(`🔍 Teste ${type} Sheet (ID: ${sheetId})...`, 'info');
+
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&cachebuster=${Date.now()}`;
+        const response = await fetch(csvUrl);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} - Sheet nicht öffentlich oder nicht gefunden`);
+        }
+
+        const csvText = await response.text();
+        const lines = csvText.split('\n');
+        const lineCount = lines.filter(line => line.trim()).length;
+
+        statusBadge.className = 'status-badge status-success';
+        statusBadge.textContent = '✓ OK';
+        statusText.textContent = `${lineCount} Zeilen gelesen`;
+
+        // Zeige erste 10 Zeilen
+        const previewLines = lines.slice(0, 10).join('\n');
+        preview.textContent = previewLines || 'Keine Daten vorhanden';
+
+        log(`✅ ${type} Sheet erfolgreich: ${lineCount} Zeilen`, 'success');
+
+        // Spezielle Tests je nach Sheet-Typ
+        if (type === 'pool') {
+          await testPoolData(csvText);
+        } else if (type === 'mitarbeiter') {
+          await testMitarbeiterData(csvText);
+        }
+
+      } catch (error) {
+        statusBadge.className = 'status-badge status-error';
+        statusBadge.textContent = '✗ Fehler';
+        statusText.textContent = error.message;
+        preview.textContent = `Fehler: ${error.message}\n\nMögliche Ursachen:\n- Sheet ist nicht öffentlich geteilt\n- Sheet-ID ist falsch\n- Netzwerkfehler`;
+        log(`❌ ${type} Sheet Fehler: ${error.message}`, 'error');
+      }
+    }
+
+    // Test Pool-Daten speziell
+    async function testPoolData(csvText) {
+      const lines = csvText.split('\n');
+      const header = lines[0]?.split(',') || [];
+      
+      log('📊 Pool-Daten Analyse:', 'info');
+      log(`   Header: ${header.join(', ')}`, 'info');
+      
+      const hasAllColumns = ['NAME', 'START', 'DEADLINE', 'FAKTOR', 'RATE', 'ROTATION']
+        .every(col => header.some(h => h.toUpperCase().includes(col)));
+      
+      if (hasAllColumns) {
+        log('   ✅ Alle erforderlichen Spalten vorhanden', 'success');
+      } else {
+        log('   ⚠️ Einige Spalten fehlen möglicherweise', 'warning');
+      }
+    }
+
+    // Test Mitarbeiter-Daten speziell
+    async function testMitarbeiterData(csvText) {
+      const lines = csvText.split('\n');
+      
+      log('👥 Mitarbeiter-Daten Analyse:', 'info');
+      log(`   Gesamt Zeilen: ${lines.length}`, 'info');
+      
+      if (lines.length >= 4) {
+        const dateRow = lines[3];
+        log(`   Datums-Zeile (4): ${dateRow.substring(0, 100)}...`, 'info');
+        log('   ✅ Struktur sieht korrekt aus', 'success');
+      } else {
+        log('   ⚠️ Zu wenige Zeilen (erwarte mindestens 4)', 'warning');
+      }
+    }
+
+    // Alle Sheets testen
+    async function testAllSheets() {
+      log('🚀 Starte Tests für alle Sheets...', 'info');
+      
+      await loadSheetsConfig();
+      
+      await testSheet('livevol');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      await testSheet('pool');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      await testSheet('mitarbeiter');
+      
+      log('✅ Alle Tests abgeschlossen!', 'success');
+    }
+
+    // Init beim Laden
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadSheetsConfig();
+      log('🎮 Seite geladen - Klicke auf "Alle Sheets testen" um zu starten!', 'info');
+    });
+  </script>
+</body>
+</html>
